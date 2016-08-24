@@ -1,11 +1,14 @@
 package com.example.rmi.orderbook.util;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class Analyzer {
+	private static final String dateFormat = "yyyy-MM-dd HH:mm:ss";
+	private static final SimpleDateFormat sdf = new SimpleDateFormat(dateFormat); 
     private HashMap<String, Object> p = new HashMap<String, Object>();
 
     public Object get(String key) {
@@ -51,5 +54,33 @@ public class Analyzer {
             }
             scanner.close();
         }
+    }
+    
+    /**
+     * Parses a time stamp following {@link #dateFormat}.
+     * @param dateString
+     * 			a string formated timestamp
+     * @return a date
+     * @throws IllegalArgumentException if the date format doesn't match
+     */
+    public static Date parseTimeStamp(String dateString){
+		Date date = null;
+		try {
+			date = sdf.parse(dateString);
+		} catch (ParseException e) {
+			System.err.println("Date must be formatted in this way: " + dateFormat);
+			new IllegalArgumentException();
+		}
+		return date;
+
+	}
+    
+    /**
+     * Converts milliseconds from 1970 to a formated time stamp.
+     * @param milliseconds
+     * @return A time stamp following {@link #dateFormat}
+     */
+    public static String milliSecondsToTimestamp(long milliseconds) {
+        return sdf.format(new Date(milliseconds));
     }
 }

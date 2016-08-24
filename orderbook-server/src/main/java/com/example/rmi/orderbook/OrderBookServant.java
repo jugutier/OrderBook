@@ -20,17 +20,6 @@ public class OrderBookServant implements OrderBookService{
         this.handles = new LinkedList<>();
         UnicastRemoteObject.exportObject(this, 0);
 	}
-	
-//	public OrderBookServant(final String[][] inititalOrders)
-//            throws RemoteException {
-//        for (final String[] orderString : inititalOrders) {
-//        	String securityId = orderString[0];
-//    		Double value = Double.valueOf(orderString[1]);
-//    		boolean isBuying = orderString[2].equals("yes");
-//            orders.add(new Order(securityId, value, isBuying));
-//        }
-//        
-//    }
 
 	@Override
 	public Set<Order> listOrders() throws RemoteException {
@@ -40,7 +29,7 @@ public class OrderBookServant implements OrderBookService{
 	@Override
 	public void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying,
 			OrderBookClientHandle clientHandler) throws RemoteException {
-		Order bookedOrder = new Order(clientId, securityId, amount, value, isBuying);
+		Order bookedOrder = new Order(clientId, securityId, amount, value, isBuying , System.currentTimeMillis());
 		orders.add(bookedOrder);
 		handles.add(clientHandler);
 		System.out.println("Booked: "+ bookedOrder );
