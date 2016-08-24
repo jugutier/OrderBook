@@ -1,5 +1,7 @@
 package com.example.rmi.orderbook.util;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -22,7 +24,9 @@ public class Analyzer {
         p.put("HOSTNAME", "localhost");
         p.put("PORT", 1099);
         p.put("SERVICE", "OrderBookService");
-
+        p.put("START",new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        p.put("END", "never");
+        
         for (int i = 0; i < args.length; i++) {
             String parameter = args[i];
             Scanner scanner = new Scanner(parameter);

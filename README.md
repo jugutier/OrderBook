@@ -47,6 +47,12 @@ We will need 3 console windows open for this:
 
 `$> java com.example.rmi.orderbook.server.OrderBookServer`
 
+####Aditional parameters (Server)
+
+START = A delayed start date in the format yyyy-MM-dd HH:mm:ss, default is current time.
+
+END = A session expiration date in the format yyyy-MM-dd HH:mm:ss, default is never expire.
+
 ### Client
 
 `$> export CLASSPATH="$ROOT/orderbook-client/target/classes:$ROOT/orderbook-api/target/classes"`
