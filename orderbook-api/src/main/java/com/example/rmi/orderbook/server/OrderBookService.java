@@ -24,15 +24,21 @@ public interface OrderBookService extends Remote {
     /**
      * Books an order into the value-time priority queue
      *
+     * @param clientId
+     *            the client's unique identifier
      * @param securityId
-     *            the securities identifier
+     *            the security unique identifier
+     * @param amount
+     *            the value offered
      * @param value
      *            the value offered
      * @param clientHandler
      *            a remote handler for the service to notify clients
+     * @param isBuying
+     * 			boolean value to indicate if its a buying or selling order
      * @throws RemoteException
      *             if the client-server connection drops.
      */
-    void bookOrder(String securityId, int value, OrderBookClientHandle clientHandler) throws RemoteException;
+    void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
 
 }
