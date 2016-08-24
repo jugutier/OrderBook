@@ -2,6 +2,8 @@ package com.example.rmi.orderbook;
 
 import java.io.Serializable;
 
+import com.example.rmi.orderbook.util.Analyzer;
+
 public class Order implements Serializable {
 	private static final long serialVersionUID = 8822833371248140397L;
 
@@ -10,13 +12,15 @@ public class Order implements Serializable {
 	private Integer amount;
 	private Double value;
 	private boolean isBuying;
+	private long timestamp;
 
-	public Order (String clientId, String securityId, Integer amount, Double value, boolean isBuying){
+	public Order (String clientId, String securityId, Integer amount, Double value, boolean isBuying, long timestamp){
 		this.clientId = clientId;
 		this.securityId = securityId;
 		this.amount = amount;
 		this.value = value;
 		this.isBuying = isBuying;
+		this.timestamp = timestamp;
 	}
 
 	public String getClientId() {
@@ -38,6 +42,10 @@ public class Order implements Serializable {
 	public boolean isBuying() {
 		return isBuying;
 	}
+	
+	public long getTimestamp() {
+		return timestamp;
+	}
 
 	@Override
 	public int hashCode() {
@@ -49,6 +57,7 @@ public class Order implements Serializable {
 		result = prime * result + (isBuying ? 1231 : 1237);
 		result = prime * result
 				+ ((securityId == null) ? 0 : securityId.hashCode());
+		result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
 	}
@@ -79,6 +88,8 @@ public class Order implements Serializable {
 				return false;
 		} else if (!securityId.equals(other.securityId))
 			return false;
+		if (timestamp != other.timestamp)
+			return false;
 		if (value == null) {
 			if (other.value != null)
 				return false;
@@ -91,7 +102,7 @@ public class Order implements Serializable {
 	public String toString() {
 		return "Order [clientId=" + clientId + ", securityId=" + securityId
 				+ ", amount=" + amount + ", value=" + value + ", isBuying="
-				+ isBuying + "]";
+				+ isBuying + ", timestamp=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
 	}
 
 }

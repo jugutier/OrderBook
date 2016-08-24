@@ -3,8 +3,6 @@ package com.example.rmi.orderbook.server;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.example.rmi.orderbook.OrderBookServant;
@@ -47,7 +45,7 @@ public class OrderBookServer {
 
 		final String end = auxi.get("END").toString();
 		System.out.println("Session ends at: " + end);
-		Date endDate = parseTimeStamp(end);
+		Date endDate = Analyzer.parseTimeStamp(end);
 
 		if(endDate != null){
 			sleepUntil(end);
@@ -60,7 +58,7 @@ public class OrderBookServer {
 	}
 	
 	private static void sleepUntil(String timestamp){
-		Date untilDate = parseTimeStamp(timestamp);     
+		Date untilDate = Analyzer.parseTimeStamp(timestamp);     
 
 		Date now = new Date ();
 		if(untilDate.compareTo(now) > 0){
@@ -71,16 +69,5 @@ public class OrderBookServer {
 		}
 	}
 
-	private static Date parseTimeStamp(String dateString){
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		Date date = null;
-		try {
-			date = sdf.parse(dateString);
-		} catch (ParseException e) {
-			System.err.println("Date must be formatted in this way: yyyy-MM-dd HH:mm:ss");
-			new IllegalArgumentException();
-		}
-		return date;
-
-	}
+	
 }
