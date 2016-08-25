@@ -103,15 +103,15 @@ public class PriorityOrderBook {
 		}
 
 	}
-
+	//just adds, no matching on this side yet.
 	public void buy(Order buyOrder){
 		String security = buyOrder.getSecurityId();
-		PriorityBlockingQueue<Order> sellQueueForSecurity = buyMap.get(security);
-		if(sellQueueForSecurity == null){
-			sellQueueForSecurity = new PriorityBlockingQueue<Order>();			
-			buyMap.put(security, sellQueueForSecurity);
+		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
+		if(buyQueueForSecurity == null){
+			buyQueueForSecurity = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());			
+			buyMap.put(security, buyQueueForSecurity);
 		}
-		sellQueueForSecurity.offer(buyOrder);
+		buyQueueForSecurity.offer(buyOrder);
 	}
 
 	public void clear() {
