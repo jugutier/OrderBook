@@ -12,12 +12,10 @@ import com.example.rmi.orderbook.server.OrderBookService;
 
 public class OrderBookServant implements OrderBookService{
 	private final List<Order> orders;
-	private final List<OrderBookClientHandle> handles;
 	
 	public OrderBookServant() throws RemoteException{
 		System.out.println("Servant init");
-        this.orders = new LinkedList<>();
-        this.handles = new LinkedList<>();
+        this.orders = new LinkedList<Order>();
         UnicastRemoteObject.exportObject(this, 0);
 	}
 
@@ -27,11 +25,12 @@ public class OrderBookServant implements OrderBookService{
 	}
 
 	@Override
-	public void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying,
-			OrderBookClientHandle clientHandler) throws RemoteException {
-		Order bookedOrder = new Order(clientId, securityId, amount, value, isBuying , System.currentTimeMillis());
+	public void bookOrder(String clientId, String securityId, Integer amount,
+			Double value, boolean isBuying,	OrderBookClientHandle clientHandler) 
+					throws RemoteException {
+		Order bookedOrder = new Order(clientId, securityId, amount, value,
+				isBuying , System.currentTimeMillis(), clientHandler);
 		orders.add(bookedOrder);
-		handles.add(clientHandler);
 		System.out.println("Booked: "+ bookedOrder );
 
 		
@@ -44,17 +43,14 @@ public class OrderBookServant implements OrderBookService{
 	 */
 	public void finishSession(){
 		System.out.println("Finishing "+orders.size() +" orders");
-		for (int i = 0; i < orders.size(); i++) {
+		for (Order order : orders) {
 			try {
-				handles.get(i).notifyOrderCancelled(orders.get(i).getSecurityId());
+				order.getClientHandle().notifyOrderCancelled(order.getSecurityId());
 			} catch (RemoteException e) {
 				System.out.println("Attempted to notify a client that has probably disconnected");
 			}
-		}
-		
-		orders.clear();
-		handles.clear();
-		
+		}		
+		orders.clear();		
 	}
 
 }

@@ -2,6 +2,7 @@ package com.example.rmi.orderbook;
 
 import java.io.Serializable;
 
+import com.example.rmi.orderbook.client.OrderBookClientHandle;
 import com.example.rmi.orderbook.util.Analyzer;
 
 public class Order implements Serializable {
@@ -13,14 +14,16 @@ public class Order implements Serializable {
 	private Double value;
 	private boolean isBuying;
 	private long timestamp;
+	private OrderBookClientHandle clientHandle;
 
-	public Order (String clientId, String securityId, Integer amount, Double value, boolean isBuying, long timestamp){
+	public Order (String clientId, String securityId, Integer amount, Double value, boolean isBuying, long timestamp, OrderBookClientHandle clientHandle){
 		this.clientId = clientId;
 		this.securityId = securityId;
 		this.amount = amount;
 		this.value = value;
 		this.isBuying = isBuying;
 		this.timestamp = timestamp;
+		this.clientHandle = clientHandle;
 	}
 
 	public String getClientId() {
@@ -30,9 +33,13 @@ public class Order implements Serializable {
 	public String getSecurityId() {
 		return securityId;
 	}
-	
+
 	public Integer getAmount() {
 		return amount;
+	}
+	
+	public void setAmount(Integer amount) {
+		this.amount = amount;
 	}
 	
 	public Double getValue() {
@@ -42,9 +49,13 @@ public class Order implements Serializable {
 	public boolean isBuying() {
 		return isBuying;
 	}
-	
+
 	public long getTimestamp() {
 		return timestamp;
+	}
+
+	public OrderBookClientHandle getClientHandle() {
+		return clientHandle;
 	}
 
 	@Override
