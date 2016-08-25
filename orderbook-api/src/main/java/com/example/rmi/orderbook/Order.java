@@ -4,7 +4,11 @@ import java.io.Serializable;
 
 import com.example.rmi.orderbook.client.OrderBookClientHandle;
 import com.example.rmi.orderbook.util.Analyzer;
-
+/**
+ * Abstraction for an Order. Supports concurrent users by 
+ * synchronizing the amount of securities placed in this
+ * order on get and set.
+ */
 public class Order implements Serializable {
 	private static final long serialVersionUID = 8822833371248140397L;
 
@@ -35,11 +39,15 @@ public class Order implements Serializable {
 	}
 
 	public Integer getAmount() {
-		return amount;
+		synchronized(amount){
+			return amount;
+		}
 	}
 	
 	public void setAmount(Integer amount) {
-		this.amount = amount;
+		synchronized(amount){
+			this.amount = amount;
+		}
 	}
 	
 	public Double getValue() {

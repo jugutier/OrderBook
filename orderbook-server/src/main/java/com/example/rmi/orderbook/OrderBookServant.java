@@ -2,26 +2,23 @@ package com.example.rmi.orderbook;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 import com.example.rmi.orderbook.client.OrderBookClientHandle;
 import com.example.rmi.orderbook.server.OrderBookService;
 
 public class OrderBookServant implements OrderBookService{
-	private final List<Order> orders;
+	private final PriorityOrderBook orders;
 	
 	public OrderBookServant() throws RemoteException{
 		System.out.println("Servant init");
-        this.orders = new LinkedList<Order>();
+        this.orders = new PriorityOrderBook();
         UnicastRemoteObject.exportObject(this, 0);
 	}
 
 	@Override
 	public Set<Order> listOrders() throws RemoteException {
-		return new HashSet<Order>(orders);
+		return orders.getAllOrders();
 	}
 
 	@Override
@@ -30,7 +27,11 @@ public class OrderBookServant implements OrderBookService{
 					throws RemoteException {
 		Order bookedOrder = new Order(clientId, securityId, amount, value,
 				isBuying , System.currentTimeMillis(), clientHandler);
-		orders.add(bookedOrder);
+		if(isBuying){
+			orders.buy(bookedOrder);
+		}else{
+			orders.sell(bookedOrder);
+		}
 		System.out.println("Booked: "+ bookedOrder );
 
 		
@@ -42,8 +43,9 @@ public class OrderBookServant implements OrderBookService{
 	 * clients don't need to know about it.
 	 */
 	public void finishSession(){
-		System.out.println("Finishing "+orders.size() +" orders");
-		for (Order order : orders) {
+		System.out.println("Finishing: "+ orders.toString());
+		Set<Order> allOrders = orders.getAllOrders();
+		for (Order order : allOrders) {
 			try {
 				order.getClientHandle().notifyOrderCancelled(order.getSecurityId());
 			} catch (RemoteException e) {
