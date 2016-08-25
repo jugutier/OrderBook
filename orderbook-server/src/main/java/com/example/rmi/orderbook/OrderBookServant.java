@@ -27,6 +27,7 @@ public class OrderBookServant implements OrderBookService{
 					throws RemoteException {
 		Order bookedOrder = new Order(clientId, securityId, amount, value,
 				isBuying , System.currentTimeMillis(), clientHandler);
+		System.out.println("Booking...");
 		if(isBuying){
 			orders.buy(bookedOrder);
 		}else{

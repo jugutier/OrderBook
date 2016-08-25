@@ -1,5 +1,7 @@
 package com.example.rmi.orderbook;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NoSuchObjectException;
@@ -7,6 +9,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import com.example.rmi.orderbook.client.OrderBookClientHandle;
@@ -48,10 +51,13 @@ public class OrderBookClient {
 
 			do{
 				System.out.println("Enter your command:");
-				String[] input = System.console().readLine().split(" ");
+				String[] input = new BufferedReader(new InputStreamReader(System.in)).readLine().split(" ");
+				System.out.println("Your command is" + input);
 				parseCommand(clientId, serverHandle, clientHandler, new Analyzer(input));
+				
 			}while(true);
 		} catch(Exception e){
+			e.printStackTrace();
 			System.err.println("Can't connect now... Try again when sessions open");
 			System.exit(-1);
 		}finally {
@@ -74,10 +80,11 @@ public class OrderBookClient {
 	}
 
 	private static void parseCommand(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
-		String securityId = command.get("SECURITY").toString();
-		Integer amount = Integer.valueOf(command.get("AMOUNT").toString());
-		Double value = Double.valueOf(command.get("VALUE").toString());
-		boolean isBuying = command.get("ISBUYING").toString().equalsIgnoreCase("yes");
+		
+		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
+		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
+		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
+		boolean isBuying = Objects.requireNonNull(command.get("ISBUYING"), "Must indicate a ISBUYING (yes/no)").toString().equalsIgnoreCase("yes");
 
 		serverHandle.bookOrder(clientId, securityId, amount, value, isBuying, clientHandler);
 
