@@ -30,7 +30,7 @@ Define the env variable ROOT (for every console window), pointing to where you c
 
 `$> export ROOT="<path_to_repo_clone>"`
 
-Once in "$ROOT" run:
+Once in "$ROOT" , and stepped into this repository's extract location run:
 `$> mvn clean install`
 
 ###Setting it up to browse with eclipse (optional)
