@@ -31,6 +31,7 @@ public class OrderBookClient {
 				System.err.println("Please authenticate by passing your clientId through cli arguments: CLIENT=myId");
 				System.exit(-1);
 			}
+			//If we had an auth service, this is where we wouldd use it.
 
 			auxi.dump();
 
@@ -52,13 +53,15 @@ public class OrderBookClient {
 			do{
 				System.out.println("Enter your command:");
 				String[] input = new BufferedReader(new InputStreamReader(System.in)).readLine().split(" ");
-				System.out.println("Your command is" + input);
-				parseCommand(clientId, serverHandle, clientHandler, new Analyzer(input));
-				
+				if(input.length == 1 && input[0].equalsIgnoreCase("LIST")){
+					listAllOrders(serverHandle, (OrderBookClientHandleImpl) clientHandler);
+				}else{
+					parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
+				}
 			}while(true);
 		} catch(Exception e){
 			e.printStackTrace();
-			System.err.println("Can't connect now... Try again when sessions open");
+			System.err.println("Can't connect now... Try again when trade sessions open");
 			System.exit(-1);
 		}finally {
 			finishSession();
@@ -79,7 +82,7 @@ public class OrderBookClient {
 		}
 	}
 
-	private static void parseCommand(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
+	private static void parseTransaction(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
 		
 		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
 		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
@@ -89,12 +92,19 @@ public class OrderBookClient {
 		serverHandle.bookOrder(clientId, securityId, amount, value, isBuying, clientHandler);
 
 	}
-
-	private static void testListOrders(OrderBookService serverHandle) throws RemoteException {
-		final Set<Order> orders = serverHandle.listOrders();
+	/* For live testing only. */
+	private static void listAllOrders(OrderBookService serverHandle, OrderBookClientHandleImpl clientHandle) throws RemoteException {
+		System.out.println("=== Debug: Server state ===");
+		final Set<Order> orders =  serverHandle.listOrders();
 		for (Order order : orders) {
 			System.out.println(order);
 		}
+		System.out.println("=== Debug: Client state ===");
+		List<String> transactions = clientHandle.getTransactionsLog();
+		for (String transaction : transactions) {
+			System.out.println(transaction);
+		}
+		System.out.println("===========================");
 	}
 
 }

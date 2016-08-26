@@ -37,13 +37,17 @@ public class PriorityOrderBook {
 	}
 
 	public void sell(Order sellOrder) throws RemoteException{
+		if(sellOrder.isBuying()){
+			throw new IllegalArgumentException("Attempted selling a buying order");
+		}
 		String security = sellOrder.getSecurityId();
 		// 1. Look for buyers of the same security to match with.
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
 		if(buyQueueForSecurity != null){
 			Set<Order> toRemove = new HashSet<Order>();
 			for (Order buyOrder : buyQueueForSecurity) {				
-				if(buyOrder.getSecurityId().equals(sellOrder.getSecurityId()) &&
+				if(	!buyOrder.getClientId().equals(sellOrder.getClientId()) &&
+						buyOrder.getSecurityId().equals(sellOrder.getSecurityId()) &&
 						buyOrder.getValue() >= sellOrder.getValue()){
 					//1.1 If we have matched an existing buyOrder place as many units as we can.
 					int buyingUnits = buyOrder.getAmount();
@@ -53,9 +57,11 @@ public class PriorityOrderBook {
 						//1.1.1 Partially fulfill for a buyer interested in more 
 						//securities than the ones in the incoming orders.
 						buyOrder.setAmount( buyingUnits - sellingUnits);
-						buyOrder.getClientHandle().notifyOrderMatched(buyOrder.getSecurityId(), buyingUnits - sellingUnits);
+						buyOrder.getClientHandle().notifyOrderMatched(buyOrder.getSecurityId(), buyingUnits - sellingUnits,
+								sellOrder.getValue());
 						sellOrder.setAmount(0);
-						sellOrder.getClientHandle().notifyOrderMatched(sellOrder.getSecurityId(), sellingUnits);
+						sellOrder.getClientHandle().notifyOrderMatched(sellOrder.getSecurityId(), sellingUnits,
+								sellOrder.getValue());
 					}else if(buyingUnits == sellingUnits){
 						//1.1.2 If all units are placed, remove both orders and notify involved parties
 						buyOrder.setAmount(0);
@@ -105,6 +111,9 @@ public class PriorityOrderBook {
 	}
 	//just adds, no matching on this side yet.
 	public void buy(Order buyOrder){
+		if(!buyOrder.isBuying()){
+			throw new IllegalArgumentException("Attempted buying a selling order");
+		}
 		String security = buyOrder.getSecurityId();
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
 		if(buyQueueForSecurity == null){
