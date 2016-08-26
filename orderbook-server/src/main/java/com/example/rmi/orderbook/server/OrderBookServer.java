@@ -9,11 +9,6 @@ import com.example.rmi.orderbook.OrderBookServant;
 import com.example.rmi.orderbook.util.Analyzer;
 
 public class OrderBookServer {
-	//Format: Security id, amount, buying?
-	//	private static final String[][] stubbedOrders = new String[][] {
-	//        new String[] { "AAPL", "100", "yes", },
-	//        new String[] { "BAC", "2500", "no" },
-	//        new String[] { "JPM", "300", "yes" } };
 
 	public static void main(final String[] args) throws RemoteException {
 

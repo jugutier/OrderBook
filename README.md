@@ -93,7 +93,7 @@ We support many clients running concurrently over the net. If your server is run
 
 ## Tests
 
-An OrderBook has several rules that it needs to apply, for that reason there are [Unit Tests](/src/test/java/com/example/rmi/orderbook/OrderBookServiceTest.java) the comments should aid to understand the behavior expected for this service.
+An OrderBook has several rules that it needs to apply, for that reason there are [Unit Tests](orderbook-server/src/test/java/com/example/rmi/orderbook/OrderBookServiceTest.java) the comments should aid to understand the behavior expected for this service.
 
 Given that the project is client-server we only test our PriorityOrderBook where the logic rules are actually enforced. Any remote objects are mocked using the `Mockito` Java tool.
 

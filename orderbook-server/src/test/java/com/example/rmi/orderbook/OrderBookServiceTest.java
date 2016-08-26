@@ -56,9 +56,9 @@ public class OrderBookServiceTest {
 
 		Set<Order> remainingOrders = book.getAllOrders();
 		//Only one order should be in the book
-		assertEquals(remainingOrders.size(), 1);
+		assertEquals(1, remainingOrders.size());
 		//and it should be order2 (because we favored the first one).
-		assertEquals(remainingOrders.iterator().next(), saleOrder2);
+		assertEquals(saleOrder2 , remainingOrders.iterator().next());
 
 	}
 
@@ -103,13 +103,15 @@ public class OrderBookServiceTest {
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 20.10,
 				false , System.currentTimeMillis(), clientHandler);
 
-		book.sell(sellOrder);
+		assertEquals(null, book.sell(sellOrder));
 		
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 40.0,
-				false , System.currentTimeMillis(), clientHandler);
+				true , System.currentTimeMillis(), clientHandler);
 
 		book.buy(buyOrder);
 		
+		Double transactionValue = book.sell(sellOrder);		
+		assertEquals(new Double(20.10), transactionValue);		
 	}
 
 	/**
@@ -126,18 +128,19 @@ public class OrderBookServiceTest {
 //		ISBUYING=NO SECURITY=AAPL AMOUNT=1 VALUE=20.10  AT="2016-08-24 11:36:01"
 					
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 20.21,
-				false , System.currentTimeMillis(), clientHandler);
+				true , System.currentTimeMillis(), clientHandler);
 
-		book.buy(buyOrder);
+		assertEquals(null, book.buy(buyOrder));
 		
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 20.10,
 				false , System.currentTimeMillis(), clientHandler);
 
-		book.sell(sellOrder);
+		Double transactionValue = book.sell(sellOrder);		
+		assertEquals(new Double(20.21), transactionValue);
 	}
 
 	/**
-	 * A seller places an order for less units than a queued applicable buy order.
+	 * A sell order arrives for less units than a queued applicable buy order.
 	 * 
 	 * Expected: We partially fulfill the order thus satisfying the buyer 
 	 * and partially completing the sellers order.
@@ -153,22 +156,28 @@ public class OrderBookServiceTest {
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 9.0,
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
+		
 		Set<Order> remainingOrders = book.getAllOrders();
 		//The buy order remains
-		assertEquals(remainingOrders.size(),1);		
+		assertEquals(1,remainingOrders.size());
+		
+		Order remainingOrder = remainingOrders.iterator().next();
+		// The same one we have.		
+		assertEquals(buyOrder, remainingOrder);
+		
 		//but with less units
-		assertEquals(remainingOrders.iterator().next().getAmount(), new Integer(1));
+		assertEquals(new Integer(1), remainingOrder.getAmount());
 	}
 
 	/**
-	 * A buyer places an order for less units than a queued applicable sale order.
+	 * A buy order arrives for less units than a queued applicable sale order.
 	 * 
-	 * Expected: We partially fulfill the order thus satisfying the seller 
-	 * and partially completing the buyers order.
+	 * Expected: We partially fulfill the order thus satisfying the buyer 
+	 * and partially completing the sellers order.
 	 * @throws RemoteException
 	 */
 	@Test
-	public void parialBuy() throws RemoteException {
+	public void partialBuy() throws RemoteException {
 		Order sellOrder = new Order(SELLER1, SECURITY, 2, 9.0,
 				false , System.currentTimeMillis(), clientHandler);
 
@@ -178,10 +187,16 @@ public class OrderBookServiceTest {
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
 		Set<Order> remainingOrders = book.getAllOrders();
+		System.out.println(book.toString());
 		//The sale order remains
-		assertEquals(remainingOrders.size(),1);		
+		assertEquals(1, remainingOrders.size());
+		
+		Order remainingOrder = remainingOrders.iterator().next();
+		// The same one we have.		
+		assertEquals(sellOrder, remainingOrder);
+		
 		//but with less units
-		assertEquals(remainingOrders.iterator().next().getAmount(), new Integer(1));
+		assertEquals(new Integer(1), remainingOrder.getAmount());
 	}
 	
 	/**
@@ -202,7 +217,7 @@ public class OrderBookServiceTest {
 		
 		Set<Order> remainingOrders = book.getAllOrders();
 		//No match occurred and both orders are placed.
-		assertEquals(remainingOrders.size(),2);
+		assertEquals(2, remainingOrders.size());
 	}
 	
 	/**
@@ -223,7 +238,7 @@ public class OrderBookServiceTest {
 		
 		Set<Order> remainingOrders = book.getAllOrders();
 		//No match occurred and both orders are placed.
-		assertEquals(remainingOrders.size(),2);
+		assertEquals(2, remainingOrders.size());
 	}
 
 }
