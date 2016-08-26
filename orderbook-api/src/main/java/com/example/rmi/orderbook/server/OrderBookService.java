@@ -14,34 +14,40 @@ import com.example.rmi.orderbook.client.OrderBookClientHandle;
  */
 public interface OrderBookService extends Remote {
 
-    /**
-     * @return lists current active orders
-     * @throws RemoteException
-     *             if the client-server connection drops.
-     */
-    Set<Order> listOrders() throws RemoteException;
+	/**
+	 * This is to enable a TEST client to inspect the server state.
+	 * At a production level we would NOT want to give the user the ability to do this, 
+	 * thus it would be implemented outside this interface and grant access through:
+	 * a) a secure remote terminal
+	 * b) physical access
+	 * c) no access at all.
+	 * @return lists current active orders
+	 * @throws RemoteException
+	 *             if the client-server connection drops.
+	 */
+	Set<Order> listOrders() throws RemoteException;
 
-    /**
-     * Books an order into the value-time priority queue.
-     * 
-     * We require many parameters instead of the Order object because marshalling
-     *  becomes more efficient through the net in this way.
-     *
-     * @param clientId
-     *            the client's unique identifier
-     * @param securityId
-     *            the security unique identifier
-     * @param amount
-     *            the value offered
-     * @param value
-     *            the value offered
-     * @param clientHandler
-     *            a remote handler for the service to notify clients
-     * @param isBuying
-     * 			boolean value to indicate if its a buying or selling order
-     * @throws RemoteException
-     *             if the client-server connection drops.
-     */
-    void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
+	/**
+	 * Books an order into the value-time priority queue.
+	 * 
+	 * We require many parameters instead of the Order object because marshalling
+	 *  becomes more efficient through the net in this way.
+	 *
+	 * @param clientId
+	 *            the client's unique identifier
+	 * @param securityId
+	 *            the security unique identifier
+	 * @param amount
+	 *            the value offered
+	 * @param value
+	 *            the value offered
+	 * @param clientHandler
+	 *            a remote handler for the service to notify clients
+	 * @param isBuying
+	 * 			boolean value to indicate if its a buying or selling order
+	 * @throws RemoteException
+	 *             if the client-server connection drops.
+	 */
+	void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
 
 }
