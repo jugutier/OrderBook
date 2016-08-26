@@ -36,84 +36,100 @@ public class PriorityOrderBook {
 		this.sellMap = new ConcurrentHashMap<String, PriorityBlockingQueue<Order>>();
 	}
 
-	public void sell(Order sellOrder) throws RemoteException{
+	/**
+	 * Attempts to match-sell an order or queues it until a buyer arrives.
+	 * 
+	 * @param sellOrder
+	 * 			the order to be sold
+	 * @return
+	 * 		The effective transaction value, or null if queued.
+	 * @throws RemoteException
+	 */
+	public Double sell(Order sellOrder) throws RemoteException{
 		if(sellOrder.isBuying()){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
-		String security = sellOrder.getSecurityId();
+		System.out.println("Trying to sell "+ sellOrder.toString());
+		String desiredSecurity = sellOrder.getSecurityId();
+		Double transactionValue = null;
 		// 1. Look for buyers of the same security to match with.
-		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
+		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-			Set<Order> toRemove = new HashSet<Order>();
-			for (Order buyOrder : buyQueueForSecurity) {				
+			for (Order buyOrder : buyQueueForSecurity) {
 				if(	!buyOrder.getClientId().equals(sellOrder.getClientId()) &&
-						buyOrder.getSecurityId().equals(sellOrder.getSecurityId()) &&
 						buyOrder.getValue() >= sellOrder.getValue()){
 					//1.1 If we have matched an existing buyOrder place as many units as we can.
 					int buyingUnits = buyOrder.getAmount();
 					int sellingUnits = sellOrder.getAmount();
-
 					if(buyingUnits > sellingUnits){
 						//1.1.1 Partially fulfill for a buyer interested in more 
 						//securities than the ones in the incoming orders.
+						transactionValue = sellOrder.getValue();
+						
 						buyOrder.setAmount( buyingUnits - sellingUnits);
-						buyOrder.getClientHandle().notifyOrderMatched(buyOrder.getSecurityId(), buyingUnits - sellingUnits,
-								sellOrder.getValue());
+						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits - sellingUnits,
+								transactionValue);
 						sellOrder.setAmount(0);
-						sellOrder.getClientHandle().notifyOrderMatched(sellOrder.getSecurityId(), sellingUnits,
-								sellOrder.getValue());
+						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
+								transactionValue);
+						System.out.println("At > "+ (buyingUnits - sellingUnits) +"\n"+ buyOrder.toString() +"\n"+ sellOrder.toString());
 					}else if(buyingUnits == sellingUnits){
-						//1.1.2 If all units are placed, remove both orders and notify involved parties
-						buyOrder.setAmount(0);
-						sellOrder.setAmount(0);
-						toRemove.add(buyOrder);
-						toRemove.add(sellOrder);
-						break;
+						//1.1.2 If all units are placed, remove the buying order and notify both parties
+						System.out.println("removing");
+						buyQueueForSecurity.remove(buyOrder);
+						transactionValue = sellOrder.getValue();
+						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
+								transactionValue);
+						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
+								transactionValue);
+						
+						// Perfect match (or several partial fulfillments)
+						return transactionValue;
 					}else{
-						//1.1.3 Partially fulfill for this seller and a buyer willing
-						//to take less securities than the ones in the incoming orders.
-						sellOrder.setAmount(sellingUnits - buyingUnits);
+						//1.1.3 Partially fulfill for this seller and remove the buy order for
+						//less securities than the ones in the incoming orders.
+						transactionValue = sellOrder.getValue();
+						System.out.println("At < "+ (sellingUnits - sellingUnits));
+						sellOrder.setAmount(sellingUnits - sellingUnits);						
+						buyQueueForSecurity.remove(buyOrder);
+						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits,
+								transactionValue);
+						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits,
+								transactionValue);
 					}					
 				}
 			}
-			//1.2 If we fulfilled any orders, remove them.
-			if(toRemove != null && toRemove.size() > 0){
-				for (Order order : toRemove) {
-					if(order.isBuying()){
-						//Critical section: removing a security.
-						buyQueueForSecurity.remove(order);
-					}else{
-						//1.2.1 The security might not exist if we match at the time of placement
-						//at its first appearance for the session.
-						if(sellMap.containsKey(security)){
-							//Critical section: lookup & remove.
-							sellMap.get(security).remove(order);
-						}
-					}
-				}
-				if(toRemove.size() == 2){
-					//1.2.2 We made a perfect match. Nothing else to do here.
-					return;
-				}
+		}
+		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
+		if(sellOrder.getAmount() > 0){
+			if(sellMap.containsKey(desiredSecurity)){				
+					System.out.println("queuing \n"+ sellOrder.toString());
+					sellMap.get(desiredSecurity).offer(sellOrder);
+			}else{
+				//Critical section: creating and adding a new queue for an non-existing security.
+				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
+				System.out.println("queuing 2 \n"+ sellOrder.toString());
+				pq.offer(sellOrder);
+				sellMap.put(desiredSecurity, pq);
 			}
 		}
-		//2. If we couldn't match it to any of the existing (or partially fulfilled it), queue it.
-		if(sellMap.containsKey(security)){
-			sellMap.get(security).offer(sellOrder);
-		}else{
-			//Critical section: creating and adding a new queue for an unused security.
-			PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
-			pq.offer(sellOrder);
-			sellMap.put(security, pq);
-
-		}
-
+		return transactionValue;
 	}
+	/**
+	 * Attempts to match-buy an order or queues it until a seller arrives.
+	 * 
+	 * @param buyOrder
+	 * 			the order to be bought
+	 * @return
+	 * 		The effective transaction value, or null if queued.
+	 * @throws RemoteException
+	 */
 	//just adds, no matching on this side yet.
-	public void buy(Order buyOrder){
+	public Double buy(Order buyOrder){
 		if(!buyOrder.isBuying()){
 			throw new IllegalArgumentException("Attempted buying a selling order");
 		}
+		System.out.println("Trying to buy "+ buyOrder.toString());
 		String security = buyOrder.getSecurityId();
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
 		if(buyQueueForSecurity == null){
@@ -121,6 +137,8 @@ public class PriorityOrderBook {
 			buyMap.put(security, buyQueueForSecurity);
 		}
 		buyQueueForSecurity.offer(buyOrder);
+		
+		return null;
 	}
 
 	public void clear() {
@@ -163,7 +181,7 @@ public class PriorityOrderBook {
 		}
 		sb.append("SELLING: \n");
 		List<Order> sellingOrders = new LinkedList<Order>();
-		dumpMap(sellingOrders, buyMap);
+		dumpMap(sellingOrders, sellMap);
 		for (Order order : sellingOrders) {
 			sb.append(order.toString()+"\n");
 		}
