@@ -109,9 +109,7 @@ public class OrderBookServiceTest {
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 40.0,
 				true , System.currentTimeMillis(), clientHandler);
 
-		book.buy(buyOrder);
-		
-		Double transactionValue = book.sell(sellOrder);		
+		Double transactionValue = book.buy(buyOrder);
 		assertEquals(new Double(20.10), transactionValue);		
 	}
 
@@ -126,8 +124,7 @@ public class OrderBookServiceTest {
 	public void testSellerGetsMoreThanExpected() throws RemoteException {
 		//Sells and gets more than expected (20.21)
 //		ISBUYING=YES SECURITY=AAPL AMOUNT=1 VALUE=20.21  AT="2016-08-24 11:36:00"
-//		ISBUYING=NO SECURITY=AAPL AMOUNT=1 VALUE=20.10  AT="2016-08-24 11:36:01"
-					
+//		ISBUYING=NO SECURITY=AAPL AMOUNT=1 VALUE=20.10  AT="2016-08-24 11:36:01"					
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 20.21,
 				true , System.currentTimeMillis(), clientHandler);
 
@@ -154,13 +151,13 @@ public class OrderBookServiceTest {
 
 		book.buy(buyOrder);
 
-		Order sellOrder = new Order(SELLER1, SECURITY, 1, 9.0,
+		Order sellOrder = new Order(SELLER1, SECURITY, 1, 10.0,
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
 		
 		Set<Order> remainingOrders = book.getAllOrders();
 		//The buy order remains
-		assertEquals(1,remainingOrders.size());
+		assertEquals(1, remainingOrders.size());
 		
 		Order remainingOrder = remainingOrders.iterator().next();
 		// The same one we have.		
@@ -188,7 +185,6 @@ public class OrderBookServiceTest {
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
 		Set<Order> remainingOrders = book.getAllOrders();
-		System.out.println(book.toString());
 		//The sale order remains
 		assertEquals(1, remainingOrders.size());
 		
@@ -233,28 +229,81 @@ public class OrderBookServiceTest {
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
 	}
+	//The "cheapest" sell order in value is the BEST candidate to get
+	//a buyer, put it first in the pq.
+	@Test
+	public void sellingComparator() throws RemoteException {
+		Comparator<Order> comp = new PriorityOrderBook.SellingComparator();
+		
+		Order one = new Order(SELLER1, SECURITY, 1, 9.0,
+				false , 1, clientHandler);
+		
+		Order two = new Order(SELLER1, SECURITY, 1, 10.0,
+				false , 1, clientHandler);	
+		
+		int greaterThan = comp.compare(one, two);
+		
+		//same time, lowest value goes first in the pq
+		assertEquals(true, new Boolean(greaterThan > 0 ) );
+		
+		one = new Order(SELLER1, SECURITY, 1, 10.0,
+				false , 1, clientHandler);
+		
+		two = new Order(SELLER2, SECURITY, 1, 10.0,
+				false , 2, clientHandler);
+		
+		int equalButTimeWins = comp.compare(one, two);
+		//same value, first order in time goes first in the pq
+		assertEquals(true, new Boolean(equalButTimeWins > 0 ) );
+		
+		
+		one = new Order(SELLER1, SECURITY, 1, 10.0,
+				false , 1, clientHandler);
+		
+		two = new Order(SELLER1, SECURITY, 1, 9.0,
+				false , 1, clientHandler);	
+		
+		int lessThan = comp.compare(one, two);
+		//same time, lowest value wins
+		assertEquals(true, new Boolean(lessThan < 0 ) );
+		
+		
+	}
 	
 	@Test
-	public void sellingComparator() throws RemoteException {		
-//		Order one = new Order(SELLER1, SECURITY, 1, 10.0,
-//				true , System.currentTimeMillis(), clientHandler);
-//		
-//		Order two = new Order(SELLER1, SECURITY, 1, 10.0,
-//				true , System.currentTimeMillis(), clientHandler);
-//		
-		Comparator<Order> comp = new PriorityOrderBook.SellingComparator();
-//		int lessThan = comp.compare(one, two);
-		
-		Order one = new Order(SELLER1, SECURITY, 1, 10.0,
+	public void buyingComparator() throws RemoteException {
+		Comparator<Order> comp = new PriorityOrderBook.BuyingComparator();
+		Order one = new Order(BUYER1, SECURITY, 1, 10.0,
 				true , 1, clientHandler);
 		
-		Order two = new Order(SELLER2, SECURITY, 1, 10.0,
+		Order two = new Order(BUYER2, SECURITY, 1, 10.0,
 				true , 2, clientHandler);
 		
 		int equalButTimeWins = comp.compare(one, two);
 		
-		assertEquals(new Boolean(equalButTimeWins > 0 ), true );
+		assertEquals(true, new Boolean(equalButTimeWins > 0 ) );
 		
+		
+		one = new Order(BUYER1, SECURITY, 1, 10.0,
+				true , 1, clientHandler);
+		
+		two = new Order(BUYER2, SECURITY, 1, 9.0,
+				true , 1, clientHandler);	
+		
+		int greaterThan = comp.compare(one, two);
+		//same time, highest value wins
+		assertEquals(true, new Boolean(greaterThan > 0 ) );
+		
+		
+		one = new Order(BUYER1, SECURITY, 1, 9.0,
+				true , 1, clientHandler);
+		
+		two = new Order(BUYER2, SECURITY, 1, 10.0,
+				true , 1, clientHandler);	
+		
+		int lessThan = comp.compare(one, two);
+		//same time, highest value wins
+		assertEquals(true, new Boolean(lessThan < 0 ) );
 		
 	}
 
