@@ -14,7 +14,7 @@ public class Order implements Serializable {
 
 	private String clientId;
 	private String securityId;
-	private Integer amount;
+	private Integer units;
 	private Double value;
 	private boolean isBuying;
 	private long timestamp;
@@ -23,7 +23,7 @@ public class Order implements Serializable {
 	public Order (String clientId, String securityId, Integer amount, Double value, boolean isBuying, long timestamp, OrderBookClientHandle clientHandle){
 		this.clientId = clientId;
 		this.securityId = securityId;
-		this.amount = amount;
+		this.units = amount;
 		this.value = value;
 		this.isBuying = isBuying;
 		this.timestamp = timestamp;
@@ -38,15 +38,15 @@ public class Order implements Serializable {
 		return securityId;
 	}
 
-	public Integer getAmount() {
-		synchronized(amount){
-			return amount;
+	public Integer getUnits() {
+		synchronized(units){
+			return units;
 		}
 	}
 	
-	public void setAmount(Integer amount) {
-		synchronized(amount){
-			this.amount = amount;
+	public void setUnits(Integer units) {
+		synchronized(units){
+			this.units = units;
 		}
 	}
 	
@@ -70,7 +70,7 @@ public class Order implements Serializable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((amount == null) ? 0 : amount.hashCode());
+		result = prime * result + ((units == null) ? 0 : units.hashCode());
 		result = prime * result
 				+ ((clientId == null) ? 0 : clientId.hashCode());
 		result = prime * result + (isBuying ? 1231 : 1237);
@@ -90,10 +90,10 @@ public class Order implements Serializable {
 		if (getClass() != obj.getClass())
 			return false;
 		Order other = (Order) obj;
-		if (amount == null) {
-			if (other.amount != null)
+		if (units == null) {
+			if (other.units != null)
 				return false;
-		} else if (!amount.equals(other.amount))
+		} else if (!units.equals(other.units))
 			return false;
 		if (clientId == null) {
 			if (other.clientId != null)
@@ -120,7 +120,7 @@ public class Order implements Serializable {
 	@Override
 	public String toString() {
 		return "Order [clientId=" + clientId + ", securityId=" + securityId
-				+ ", amount=" + amount + ", value=" + value + ", isBuying="
+				+ ", units=" + units + ", value=" + value + ", isBuying="
 				+ isBuying + ", timestamp=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
 	}
 

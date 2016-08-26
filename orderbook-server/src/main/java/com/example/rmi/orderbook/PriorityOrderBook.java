@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
  * PriorityOrderBook automatically matches viable transactions, 
@@ -46,99 +47,143 @@ public class PriorityOrderBook {
 	 * @throws RemoteException
 	 */
 	public Double sell(Order sellOrder) throws RemoteException{
-		if(sellOrder.isBuying()){
+		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
 		System.out.println("Trying to sell "+ sellOrder.toString());
-		String desiredSecurity = sellOrder.getSecurityId();
-		Double transactionValue = null;
-		// 1. Look for buyers of the same security to match with.
+		String desiredSecurity = sellOrder.getSecurityId();		
+		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-			for (Order buyOrder : buyQueueForSecurity) {
-				if(	!buyOrder.getClientId().equals(sellOrder.getClientId()) &&
-						buyOrder.getValue() >= sellOrder.getValue()){
-					//1.1 If we have matched an existing buyOrder place as many units as we can.
-					int buyingUnits = buyOrder.getAmount();
-					int sellingUnits = sellOrder.getAmount();
-					if(buyingUnits > sellingUnits){
-						//1.1.1 Partially fulfill for a buyer interested in more 
-						//securities than the ones in the incoming orders.
-						transactionValue = sellOrder.getValue();
-						
-						buyOrder.setAmount( buyingUnits - sellingUnits);
-						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits - sellingUnits,
-								transactionValue);
-						sellOrder.setAmount(0);
-						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
-								transactionValue);
-						System.out.println("At > "+ (buyingUnits - sellingUnits) +"\n"+ buyOrder.toString() +"\n"+ sellOrder.toString());
-					}else if(buyingUnits == sellingUnits){
-						//1.1.2 If all units are placed, remove the buying order and notify both parties
-						System.out.println("removing");
-						buyQueueForSecurity.remove(buyOrder);
-						transactionValue = sellOrder.getValue();
-						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
-								transactionValue);
-						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, sellingUnits,
-								transactionValue);
-						
-						// Perfect match (or several partial fulfillments)
-						return transactionValue;
-					}else{
-						//1.1.3 Partially fulfill for this seller and remove the buy order for
-						//less securities than the ones in the incoming orders.
-						transactionValue = sellOrder.getValue();
-						System.out.println("At < "+ (sellingUnits - sellingUnits));
-						sellOrder.setAmount(sellingUnits - sellingUnits);						
-						buyQueueForSecurity.remove(buyOrder);
-						buyOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits,
-								transactionValue);
-						sellOrder.getClientHandle().notifyOrderMatched(desiredSecurity, buyingUnits,
-								transactionValue);
-					}					
-				}
-			}
+			System.out.println("require for "+ sellOrder.getClientId());
+			requireClientDoesntExist(buyQueueForSecurity, sellOrder);
+			System.out.println("match pq");
+			transactionValue = match(buyQueueForSecurity, sellOrder);
+		}else{
+			System.out.println( "sell - Pq no Match "+ desiredSecurity +" Dumping: \n"+ this.toString() );
+			System.out.println(" END");
 		}
 		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
-		if(sellOrder.getAmount() > 0){
+		if(sellOrder.getUnits() > 0){
 			if(sellMap.containsKey(desiredSecurity)){				
-					System.out.println("queuing \n"+ sellOrder.toString());
-					sellMap.get(desiredSecurity).offer(sellOrder);
+				System.out.println("sell - queuing "+ sellOrder.toString());
+				sellMap.get(desiredSecurity).offer(sellOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
-				System.out.println("queuing 2 \n"+ sellOrder.toString());
+				System.out.println("queuing2 2 "+ sellOrder.toString());
 				pq.offer(sellOrder);
 				sellMap.put(desiredSecurity, pq);
 			}
 		}
 		return transactionValue;
 	}
+
 	/**
 	 * Attempts to match-buy an order or queues it until a seller arrives.
 	 * 
 	 * @param buyOrder
 	 * 			the order to be bought
 	 * @return
-	 * 		The effective transaction value, or null if queued.
+	 * 		The effective transaction value, or 0 if queued.
 	 * @throws RemoteException
 	 */
-	//just adds, no matching on this side yet.
-	public Double buy(Order buyOrder){
-		if(!buyOrder.isBuying()){
+	public Double buy(Order buyOrder) throws RemoteException{
+		if(!buyOrder.isBuying() || buyOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted buying a selling order");
 		}
+
 		System.out.println("Trying to buy "+ buyOrder.toString());
-		String security = buyOrder.getSecurityId();
-		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(security);
-		if(buyQueueForSecurity == null){
-			buyQueueForSecurity = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());			
-			buyMap.put(security, buyQueueForSecurity);
+		String desiredSecurity = buyOrder.getSecurityId();
+		Double transactionValue = 0.0;
+		PriorityBlockingQueue<Order> sellQueueForSecurity = sellMap.get(desiredSecurity);
+		if(sellQueueForSecurity != null){
+			requireClientDoesntExist(sellQueueForSecurity, buyOrder);
+			transactionValue = match(sellQueueForSecurity, buyOrder);
+		}else{
+			System.out.println("buy pq No match " + desiredSecurity);
 		}
-		buyQueueForSecurity.offer(buyOrder);
-		
-		return null;
+		if(buyOrder.getUnits() > 0){
+			if(buyMap.containsKey(desiredSecurity)){				
+				System.out.println("buy - queuing \n"+ buyOrder.toString());
+				buyMap.get(desiredSecurity).offer(buyOrder);
+			}else{
+				//Critical section: creating and adding a new queue for an non-existing security.
+				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());
+				System.out.println("buy - queuing2 "+ buyOrder.toString());
+				pq.offer(buyOrder);
+				buyMap.put(desiredSecurity, pq);
+			}
+		}
+		return transactionValue;
+	}
+	
+	// we expect that buyer & seller can't be the same user for the same security.
+	// otherwise we would have to iterate the pq in case the bestcandidate 
+	// is one of the same user's orders.
+	private void requireClientDoesntExist(PriorityBlockingQueue<Order> pq, Order order){
+		List<Order> st = pq.stream()
+			    .filter(o -> o.getClientId().equals(order.getClientId())).collect(Collectors.toList());
+		if(st.size() >0){
+			throw new IllegalArgumentException(order.getClientId()+
+			" is Trying to buy and Sell the same security, which we don't allow");
+		}
+	}
+	
+	private Double match(PriorityBlockingQueue<Order> pq, Order o) throws RemoteException{
+		Order bestCandidate = pq.peek();
+		if(bestCandidate == null || o.getUnits() == 0){
+			return 0.0;
+		}
+		String security = o.getSecurityId();
+		Double transactionValue = bestCandidate.getValue();		
+		System.out.println("o -> " + o.getValue() + "best -> " + bestCandidate.getValue());
+		if(	o.getValue() >= transactionValue){			
+			int oUnits = o.getUnits();
+			int bestCandidateUnits = bestCandidate.getUnits();
+
+			if(oUnits > bestCandidateUnits){
+				o.setUnits(oUnits - bestCandidateUnits);
+				transactionValue = bestCandidate.getValue();
+				o.getClientHandle().
+				notifyOrderMatched(security, 
+						bestCandidateUnits, 
+						transactionValue);
+
+				bestCandidate.setUnits(0);				
+				bestCandidate.getClientHandle().
+				notifyOrderMatched(security, 
+						bestCandidateUnits, 
+						transactionValue);
+				pq.remove(bestCandidate);
+			}else if(oUnits < bestCandidateUnits){
+				o.setUnits(0);
+				o.getClientHandle().
+				notifyOrderMatched(security, 
+						oUnits, 
+						transactionValue);
+
+				bestCandidate.setUnits(bestCandidateUnits - oUnits);				
+				bestCandidate.getClientHandle().
+				notifyOrderMatched(security, 
+						oUnits, 
+						transactionValue);
+			}else{
+				o.setUnits(0);				
+				o.getClientHandle().
+				notifyOrderMatched(security, 
+						oUnits, 
+						transactionValue);
+				bestCandidate.setUnits(0);
+				bestCandidate.getClientHandle().
+				notifyOrderMatched(security, 
+						oUnits, 
+						transactionValue);
+				pq.remove(bestCandidate);
+			}		
+		}
+		//If we still have units, attempt to match recursively
+		return transactionValue + match(pq,o);
 	}
 
 	public void clear() {
@@ -192,24 +237,34 @@ public class PriorityOrderBook {
 
 		public int compare(Order one, Order two) {
 			if(!one.getSecurityId().equals(two.getSecurityId())){
-				System.err.println("This orders are not comparable, they need to be for the same security");
+				System.err.println("These orders are not comparable, they need to be for the same security");
 				new IllegalArgumentException();
 			}
 			long deltaTime = one.getTimestamp() - two.getTimestamp();
 
 			double deltaValue = one.getValue() - two.getValue();
-			if(deltaTime == 0){
-				return (int) Math.ceil(deltaValue);
+			if(deltaValue == 0){
+				return (int) Math.ceil(deltaTime);
 			}
-			return (int) deltaTime;
+			return (int) deltaValue;
 		}
 	}
 
 	static class SellingComparator implements Comparator<Order> {
 
 		public int compare(Order one, Order two) {
-			//The opposite priority
-			return - (new BuyingComparator().compare(one,two));
+			if(!one.getSecurityId().equals(two.getSecurityId())){
+				System.err.println("These orders are not comparable, they need to be for the same security");
+				new IllegalArgumentException();
+			}
+			long deltaTime = one.getTimestamp() - two.getTimestamp();
+
+			double deltaValue = two.getValue() - one.getValue();
+			if(deltaValue == 0){
+				System.out.println("deltaValue is 0, using time");
+				return (int) Math.ceil(deltaTime);
+			}
+			return (int) deltaValue;
 		}
 	}
 

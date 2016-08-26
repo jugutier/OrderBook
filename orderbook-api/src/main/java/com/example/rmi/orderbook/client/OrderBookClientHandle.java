@@ -12,14 +12,14 @@ public interface OrderBookClientHandle extends Remote {
 	 * Notifies botch clients when their orders match and how many units where placed
 	 * @param securityId
 	 * 			The unique identifier for the matched security
-	 * @param amount
-	 * 			The amount of securities placed
+	 * @param units
+	 * 			The number of securities placed
 	 * @param value
 	 * 			The actual value for which the matching occurred.
 	 * @throws RemoteException
 	 * 			If the connection drops
 	 */
-	void notifyOrderMatched(String securityId, Integer amount , Double value) throws RemoteException;
+	void notifyOrderMatched(String securityId, Integer units , Double value) throws RemoteException;
 	
 	/**
 	 * When the trading session ends, any unfulfilled order is cancelled

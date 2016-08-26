@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import java.rmi.RemoteException;
+import java.util.Comparator;
 import java.util.Set;
 
 import org.junit.Before;
@@ -103,7 +104,7 @@ public class OrderBookServiceTest {
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 20.10,
 				false , System.currentTimeMillis(), clientHandler);
 
-		assertEquals(null, book.sell(sellOrder));
+		assertEquals(new Double(0.0), book.sell(sellOrder));
 		
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 40.0,
 				true , System.currentTimeMillis(), clientHandler);
@@ -130,7 +131,7 @@ public class OrderBookServiceTest {
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 20.21,
 				true , System.currentTimeMillis(), clientHandler);
 
-		assertEquals(null, book.buy(buyOrder));
+		assertEquals(new Double(0.0), book.buy(buyOrder));
 		
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 20.10,
 				false , System.currentTimeMillis(), clientHandler);
@@ -166,7 +167,7 @@ public class OrderBookServiceTest {
 		assertEquals(buyOrder, remainingOrder);
 		
 		//but with less units
-		assertEquals(new Integer(1), remainingOrder.getAmount());
+		assertEquals(new Integer(1), remainingOrder.getUnits());
 	}
 
 	/**
@@ -196,7 +197,7 @@ public class OrderBookServiceTest {
 		assertEquals(sellOrder, remainingOrder);
 		
 		//but with less units
-		assertEquals(new Integer(1), remainingOrder.getAmount());
+		assertEquals(new Integer(1), remainingOrder.getUnits());
 	}
 	
 	/**
@@ -205,7 +206,7 @@ public class OrderBookServiceTest {
 	 * @throws RemoteException
 	 * 			if the connection drops
 	 */
-	@Test
+	@Test(expected = IllegalArgumentException.class)
 	public void cantBuyToYourself() throws RemoteException {
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 10.0,
 				false , System.currentTimeMillis(), clientHandler);
@@ -214,10 +215,6 @@ public class OrderBookServiceTest {
 		Order buyOrder = new Order(SELLER1, SECURITY, 1, 10.0,
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
-		
-		Set<Order> remainingOrders = book.getAllOrders();
-		//No match occurred and both orders are placed.
-		assertEquals(2, remainingOrders.size());
 	}
 	
 	/**
@@ -226,19 +223,39 @@ public class OrderBookServiceTest {
 	 * @throws RemoteException
 	 * 			if the connection drops
 	 */
-	@Test
+	@Test(expected = IllegalArgumentException.class)
 	public void cantSellToYourself() throws RemoteException {
 		Order buyOrder = new Order(SELLER1, SECURITY, 1, 10.0,
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
 		
-		Order sellOrder = new Order(SELLER1, SECURITY, 1, 10.0,
+		Order sellOrder = new Order(SELLER1, SECURITY, 1, 9.0,
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
+	}
+	
+	@Test
+	public void sellingComparator() throws RemoteException {		
+//		Order one = new Order(SELLER1, SECURITY, 1, 10.0,
+//				true , System.currentTimeMillis(), clientHandler);
+//		
+//		Order two = new Order(SELLER1, SECURITY, 1, 10.0,
+//				true , System.currentTimeMillis(), clientHandler);
+//		
+		Comparator<Order> comp = new PriorityOrderBook.SellingComparator();
+//		int lessThan = comp.compare(one, two);
 		
-		Set<Order> remainingOrders = book.getAllOrders();
-		//No match occurred and both orders are placed.
-		assertEquals(2, remainingOrders.size());
+		Order one = new Order(SELLER1, SECURITY, 1, 10.0,
+				true , 1, clientHandler);
+		
+		Order two = new Order(SELLER2, SECURITY, 1, 10.0,
+				true , 2, clientHandler);
+		
+		int equalButTimeWins = comp.compare(one, two);
+		
+		assertEquals(new Boolean(equalButTimeWins > 0 ), true );
+		
+		
 	}
 
 }
