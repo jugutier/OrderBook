@@ -89,6 +89,31 @@ We support many clients running concurrently over the net. If your server is run
 
 `$> java com.example.rmi.orderbook.OrderBookClient CLIENT=myClientId`
 
+Passing the clientId over CLI simulates the authentication of a user. That would be the place where the server could prompt for a password and authenticate against a secure database.
+
+===
+##Trading
+
+Clients prompt you to enter a transaction in the following single-line format:
+
+`SECURITY=GOOG AMOUNT=500 VALUE=430.0 ISBUYING=YES`
+
+SECURITY: The security that you want to trade.
+
+AMOUNT: The number of units for that security that you want to place.
+
+VALUE: The limit value.
+
+ISBUYING: YES if it is a **buying order**, NO if it is a **selling order**.
+
+There is an additional debugging command that can be used:
+
+`LIST`
+
+It dumps the server's book to inspect it's internal state. This is for debugging purposes and would **never** be something the client can see. 
+
+Aditionally it shows a Transaction log for that client, meaning all matches (buy & sell) that happened over the session for that current client. This would be something the client can have access to, since it's their own transactions and can't affect the market in any way.
+
 ===
 
 ## Tests

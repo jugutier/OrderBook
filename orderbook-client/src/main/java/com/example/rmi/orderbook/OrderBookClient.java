@@ -94,17 +94,18 @@ public class OrderBookClient {
 	}
 	/* For live testing only. */
 	private static void listAllOrders(OrderBookService serverHandle, OrderBookClientHandleImpl clientHandle) throws RemoteException {
+		System.out.println("=============BEGIN==============");
 		System.out.println("=== Debug: Server state - All current orders ===");
 		final Set<Order> orders =  serverHandle.listOrders();
 		for (Order order : orders) {
 			System.out.println(order);
 		}
-		System.out.println("=== Debug: Client state - Transaction Log ===");
+		System.out.println("===  Client state - Transaction Log ===");
 		List<String> transactions = clientHandle.getTransactionsLog();
 		for (String transaction : transactions) {
 			System.out.println(transaction);
 		}
-		System.out.println("===========================");
+		System.out.println("=============END==============");
 	}
 
 }
