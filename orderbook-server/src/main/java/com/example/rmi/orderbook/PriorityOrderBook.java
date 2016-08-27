@@ -50,29 +50,29 @@ public class PriorityOrderBook {
 		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
-		System.out.println("Trying to sell "+ sellOrder.toString());
+//		System.out.println("Trying to sell "+ sellOrder.toString());
 		String desiredSecurity = sellOrder.getSecurityId();		
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-			System.out.println("require for "+ sellOrder.getClientId());
+//			System.out.println("require for "+ sellOrder.getClientId());
 			requireClientDoesntExist(buyQueueForSecurity, sellOrder);
-			System.out.println("match pq. Dump: \n"+this.toString());
+//			System.out.println("match pq. Dump: \n"+this.toString());
 			transactionValue = match(buyQueueForSecurity, sellOrder);
 		}
-		else{
-			System.out.println( "sell - Pq no Match "+ desiredSecurity +" Dumping: \n"+ this.toString() );
-			System.out.println(" END");
-		}
+//		else{
+//			System.out.println( "sell - Pq no Match "+ desiredSecurity +" Dumping: \n"+ this.toString() );
+//			System.out.println(" END");
+//		}
 		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
 		if(sellOrder.getUnits() > 0){
 			if(sellMap.containsKey(desiredSecurity)){				
-				System.out.println("sell - queuing "+ sellOrder.toString());
+//				System.out.println("sell - queuing "+ sellOrder.toString());
 				sellMap.get(desiredSecurity).offer(sellOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
-				System.out.println("queuing2 2 "+ sellOrder.toString());
+//				System.out.println("queuing2 2 "+ sellOrder.toString());
 				pq.offer(sellOrder);
 				sellMap.put(desiredSecurity, pq);
 			}
@@ -94,7 +94,7 @@ public class PriorityOrderBook {
 			throw new IllegalArgumentException("Attempted buying a selling order");
 		}
 
-		System.out.println("Trying to buy "+ buyOrder.toString());
+//		System.out.println("Trying to buy "+ buyOrder.toString());
 		String desiredSecurity = buyOrder.getSecurityId();
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> sellQueueForSecurity = sellMap.get(desiredSecurity);
@@ -102,17 +102,17 @@ public class PriorityOrderBook {
 			requireClientDoesntExist(sellQueueForSecurity, buyOrder);
 			transactionValue = match(sellQueueForSecurity, buyOrder);
 		}
-		else{
-			System.out.println("buy pq No match " + desiredSecurity);
-		}
+//		else{
+//			System.out.println("buy pq No match " + desiredSecurity);
+//		}
 		if(buyOrder.getUnits() > 0){
 			if(buyMap.containsKey(desiredSecurity)){				
-				System.out.println("buy - queuing \n"+ buyOrder.toString());
+//				System.out.println("buy - queuing \n"+ buyOrder.toString());
 				buyMap.get(desiredSecurity).offer(buyOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());
-				System.out.println("buy - queuing2 "+ buyOrder.toString());
+//				System.out.println("buy - queuing2 "+ buyOrder.toString());
 				pq.offer(buyOrder);
 				buyMap.put(desiredSecurity, pq);
 			}
@@ -140,7 +140,7 @@ public class PriorityOrderBook {
 		String security = o.getSecurityId();
 		Double transactionValue = bestCandidate.getValue();	
 		int placedUnits = 0;
-		System.out.println("o -> " + o.getValue() + " best -> " + bestCandidate.getValue());
+//		System.out.println("o -> " + o.getValue() + " best -> " + bestCandidate.getValue());
 		boolean shouldMakeTransaction = o.isBuying()?
 				(o.getValue() >= transactionValue):
 					(o.getValue() <= transactionValue);
@@ -274,7 +274,7 @@ public class PriorityOrderBook {
 			}
 			double deltaValue = two.getValue() - one.getValue();
 			if(deltaValue == 0){
-				System.out.println("deltaValue is 0, using time");
+//				System.out.println("deltaValue is 0, using time");
 				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
 			return (int) deltaValue;
