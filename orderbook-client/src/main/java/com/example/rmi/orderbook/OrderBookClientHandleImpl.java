@@ -42,15 +42,18 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
     }
 
 	@Override
-	public void notifyOrderMatched(String securityId, Integer amount , Double value) throws RemoteException {
+	public void notifyOrderMatched(String securityId, Integer amount , Double value, boolean isBuying) throws RemoteException {
 		StringBuilder sb = new StringBuilder();
 		sb.append(clientId)
 		.append("-> Order matched! ")
-		.append(securityId)
-		.append(" amount ")
-		.append(" you payed ")
-		.append(value)
-		.append(" at ")
+		.append(" security: ")
+		.append(securityId)		
+		.append(" you ")
+		.append(isBuying?"paid ": "got ")		
+		.append("$" + value)
+		.append(" each unit, for a total amount of: ")
+		.append(amount)
+		.append(". At ")
 		.append(Analyzer.milliSecondsToTimestamp(System.currentTimeMillis()));
 		
 		String logTransaction = sb.toString();

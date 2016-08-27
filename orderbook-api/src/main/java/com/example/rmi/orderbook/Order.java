@@ -119,9 +119,9 @@ public class Order implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Order [clientId=" + clientId + ", securityId=" + securityId
-				+ ", units=" + units + ", value=" + value + ", isBuying="
-				+ isBuying + ", timestamp=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
+		return "Order [CLIENT=" + clientId + ", SECURITY=" + securityId
+				+ ", AMOUNT=" + units + ", VALUE=" + value + ", isBuying="
+				+ (isBuying? "YES":"NO") + ", timestamp=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
 	}
 
 }
