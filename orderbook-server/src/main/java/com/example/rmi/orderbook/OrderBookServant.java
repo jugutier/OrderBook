@@ -2,7 +2,7 @@ package com.example.rmi.orderbook;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.Set;
+import java.util.List;
 
 import com.example.rmi.orderbook.client.OrderBookClientHandle;
 import com.example.rmi.orderbook.server.OrderBookService;
@@ -17,7 +17,7 @@ public class OrderBookServant implements OrderBookService{
 	}
 
 	@Override
-	public Set<Order> listOrders() throws RemoteException {
+	public List<Order> listOrders() throws RemoteException {
 		return orders.getAllOrders();
 	}
 
@@ -38,6 +38,12 @@ public class OrderBookServant implements OrderBookService{
 		
 	}
 	
+	@Override
+	public void clientExits(String clientId) {
+		System.out.println("Client "+ clientId +" has exited. We remove his orders.");
+		orders.remove(clientId);		
+	}
+	
 	/**
 	 * Notifies all pending orders as cancelled and shuts down the service
 	 * Note that this method is not part of the interface because 
@@ -45,7 +51,7 @@ public class OrderBookServant implements OrderBookService{
 	 */
 	public void finishSession(){
 		System.out.println("Finishing: "+ orders.toString());
-		Set<Order> allOrders = orders.getAllOrders();
+		List<Order> allOrders = orders.getAllOrders();
 		for (Order order : allOrders) {
 			try {
 				order.getClientHandle().notifyOrderCancelled(order.getSecurityId());
@@ -54,6 +60,6 @@ public class OrderBookServant implements OrderBookService{
 			}
 		}		
 		orders.clear();		
-	}
+	}	
 
 }

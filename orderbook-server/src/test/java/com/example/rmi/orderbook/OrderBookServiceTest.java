@@ -5,7 +5,7 @@ import static org.mockito.Mockito.mock;
 
 import java.rmi.RemoteException;
 import java.util.Comparator;
-import java.util.Set;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class OrderBookServiceTest {
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
 
-		Set<Order> remainingOrders = book.getAllOrders();
+		List<Order> remainingOrders = book.getAllOrders();
 		//Only one order should be in the book
 		assertEquals(1, remainingOrders.size());
 		//and it should be order2 (because we favored the first one).
@@ -82,7 +82,7 @@ public class OrderBookServiceTest {
 		Order sellOrder = new Order(SELLER1, SECURITY, 1, 10.0,
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
-		Set<Order> remainingOrders = book.getAllOrders();
+		List<Order> remainingOrders = book.getAllOrders();
 		//Only one order should be in the book
 		assertEquals(remainingOrders.size(),1);		
 		//and it should be order2 (because we favored the first one).
@@ -155,7 +155,7 @@ public class OrderBookServiceTest {
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
 
-		Set<Order> remainingOrders = book.getAllOrders();
+		List<Order> remainingOrders = book.getAllOrders();
 		//The buy order remains
 		assertEquals(1, remainingOrders.size());
 
@@ -184,7 +184,7 @@ public class OrderBookServiceTest {
 		Order buyOrder = new Order(BUYER1, SECURITY, 1, 10.0,
 				true , System.currentTimeMillis(), clientHandler);
 		book.buy(buyOrder);
-		Set<Order> remainingOrders = book.getAllOrders();
+		List<Order> remainingOrders = book.getAllOrders();
 		//The sale order remains
 		assertEquals(1, remainingOrders.size());
 
@@ -329,7 +329,7 @@ public class OrderBookServiceTest {
 		
 		Double transactionValue = book.sell(three);
 		
-		Set<Order> remainingOrders = book.getAllOrders();
+		List<Order> remainingOrders = book.getAllOrders();
 		//Only one order should be in the book
 		assertEquals(1, remainingOrders.size());
 		//it should be order2

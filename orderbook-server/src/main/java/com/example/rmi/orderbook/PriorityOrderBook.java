@@ -3,7 +3,6 @@ package com.example.rmi.orderbook;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -50,29 +49,31 @@ public class PriorityOrderBook {
 		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
-//		System.out.println("Trying to sell "+ sellOrder.toString());
+		System.out.println("Trying to sell "+ sellOrder.toString());
 		String desiredSecurity = sellOrder.getSecurityId();		
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-//			System.out.println("require for "+ sellOrder.getClientId());
+			System.out.println("require for "+ sellOrder.getClientId());
 			requireClientDoesntExist(buyQueueForSecurity, sellOrder);
-//			System.out.println("match pq. Dump: \n"+this.toString());
+			System.out.println("match pq. Dump: \n");
+			System.out.println(this);
+			System.out.println("====================");
 			transactionValue = match(buyQueueForSecurity, sellOrder);
 		}
-//		else{
-//			System.out.println( "sell - Pq no Match "+ desiredSecurity +" Dumping: \n"+ this.toString() );
-//			System.out.println(" END");
-//		}
+		else{
+			System.out.println( "sell - Pq no Match for "+ desiredSecurity +".Dumping: \n"+ this.toString() );
+			System.out.println(" =========END dump =========");
+		}
 		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
 		if(sellOrder.getUnits() > 0){
 			if(sellMap.containsKey(desiredSecurity)){				
-//				System.out.println("sell - queuing "+ sellOrder.toString());
+				System.out.println("sell - queuing "+ sellOrder.toString());
 				sellMap.get(desiredSecurity).offer(sellOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
-//				System.out.println("queuing2 2 "+ sellOrder.toString());
+				System.out.println("sell - queuing with new queue:  "+ sellOrder.toString());
 				pq.offer(sellOrder);
 				sellMap.put(desiredSecurity, pq);
 			}
@@ -112,7 +113,7 @@ public class PriorityOrderBook {
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());
-//				System.out.println("buy - queuing2 "+ buyOrder.toString());
+//				System.out.println("buy - queuing with new queue: "+ buyOrder.toString());
 				pq.offer(buyOrder);
 				buyMap.put(desiredSecurity, pq);
 			}
@@ -206,9 +207,29 @@ public class PriorityOrderBook {
 		buyMap.clear();
 		sellMap.clear();		
 	}
+	
+	public void remove(String clientId) {
+		removeFromMap(clientId, buyMap);
+		removeFromMap(clientId, sellMap);
+	}
+	
+	/**
+	 * Removes from a given map, all orders that where placed by a client.
+	 * @param clientId
+	 * 			The clients unique identifier.
+	 * @param map
+	 * 			The map for which we want to remove.
+	 */
+	private void removeFromMap(String clientId, Map<String,PriorityBlockingQueue<Order>> map){
+		Set<String> keys = map.keySet();
+		for (String key : keys) {
+			PriorityBlockingQueue<Order> securitiesForKey = map.get(key);
+			securitiesForKey.removeIf(o -> o.getClientId().equals(clientId));
+		}	
+	}
 
-	public Set<Order> getAllOrders(){
-		Set<Order> ret = new HashSet<Order>();
+	public List<Order> getAllOrders(){
+		List<Order> ret = new LinkedList<Order>();
 		dumpMap(ret, buyMap);
 		dumpMap(ret, sellMap);
 		return ret;
@@ -234,6 +255,7 @@ public class PriorityOrderBook {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
+		sb.append("========toString==========\n");
 		sb.append("BUYING: \n");
 		List<Order> buyingOrders = new LinkedList<Order>();
 		dumpMap(buyingOrders, buyMap);
@@ -246,6 +268,7 @@ public class PriorityOrderBook {
 		for (Order order : sellingOrders) {
 			sb.append(order.toString()+"\n");
 		}
+		sb.append("========END-toString==========\n");
 		return sb.toString();
 	}
 
@@ -256,12 +279,12 @@ public class PriorityOrderBook {
 				System.err.println("These orders are not comparable, they need to be for the same security");
 				new IllegalArgumentException();
 			}
-			double deltaValue = one.getValue() - two.getValue();
-			if(deltaValue == 0){
+			int naturalOrder = Double.compare(one.getValue() , two.getValue());
+			if(naturalOrder == 0){
 				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
 			//The orders are listed Highest to Lowest on the Buy Side, natural sorting on value
-			return (int) Double.compare(one.getValue() , two.getValue());
+			return naturalOrder;
 		}
 	}
 
@@ -272,14 +295,13 @@ public class PriorityOrderBook {
 				System.err.println("These orders are not comparable, they need to be for the same security");
 				new IllegalArgumentException();
 			}
-			double deltaValue = two.getValue() - one.getValue();
-			if(deltaValue == 0){
-//				System.out.println("deltaValue is 0, using time");
+			int naturalOrder = Double.compare(one.getValue() , two.getValue());
+			if(naturalOrder == 0){
 				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
-			return (int) deltaValue;
+			//The orders are listed Lowest to Highest on the Sell Side, we do the opposite of natural order on the value
+			return -(naturalOrder);
 		}
 	}
-
 
 }

@@ -1,5 +1,6 @@
 package com.example.rmi.orderbook.server;
 
+import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -11,47 +12,50 @@ import com.example.rmi.orderbook.util.Analyzer;
 public class OrderBookServer {
 
 	public static void main(final String[] args) throws RemoteException {
+		try{
+			final Analyzer auxi = new Analyzer(args);
+			final int port = Integer.valueOf(auxi.get("PORT").toString());
+			final String hostname = auxi.get("HOSTNAME").toString();
+			final String service = auxi.get("SERVICE").toString();
+			auxi.dump();
 
-		final Analyzer auxi = new Analyzer(args);
-		final int port = Integer.valueOf(auxi.get("PORT").toString());
-		final String hostname = auxi.get("HOSTNAME").toString();
-		final String service = auxi.get("SERVICE").toString();
-		auxi.dump();
-
-		final String start = auxi.get("START").toString();
-		sleepUntil(start);
+			final String start = auxi.get("START").toString();
+			sleepUntil(start);
 
 
-		final Registry registry = LocateRegistry.getRegistry(hostname, port);
-		final OrderBookServant servant = new OrderBookServant();
+			final Registry registry = LocateRegistry.getRegistry(hostname, port);
+			final OrderBookServant servant = new OrderBookServant();
 
-		registry.rebind(service, (OrderBookService)servant);
-		System.out.println("Service bound");
+			registry.rebind(service, (OrderBookService)servant);
+			System.out.println("Service bound");
 
-		Runtime.getRuntime().addShutdownHook(new Thread()
-		{
-			@Override
-			public void run()
+			Runtime.getRuntime().addShutdownHook(new Thread()
 			{
-				System.out.println("The server had to quit. All pending orders will be cancelled");
+				@Override
+				public void run()
+				{
+					System.out.println("The server had to quit. All pending orders will be cancelled");
+					servant.finishSession();
+				}
+			});
+
+			final String end = auxi.get("END").toString();
+			System.out.println("Session ends at: " + end);
+			Date endDate = Analyzer.parseTimeStamp(end);
+
+			if(endDate != null){
+				sleepUntil(end);
 				servant.finishSession();
+				System.exit(0);
 			}
-		});
+			System.out.println("Running forever");
 
-		final String end = auxi.get("END").toString();
-		System.out.println("Session ends at: " + end);
-		Date endDate = Analyzer.parseTimeStamp(end);
-
-		if(endDate != null){
-			sleepUntil(end);
-			servant.finishSession();
-			System.exit(0);
+		}catch(ConnectException e){
+			System.err.println("Couldn't find RMIRegistry. Make sure it's up and running.");
+			System.exit(-1);
 		}
-		System.out.println("Running forever");
-
-
 	}
-	
+
 	private static void sleepUntil(String timestamp){
 		Date untilDate = Analyzer.parseTimeStamp(timestamp);     
 
@@ -64,5 +68,5 @@ public class OrderBookServer {
 		}
 	}
 
-	
+
 }
