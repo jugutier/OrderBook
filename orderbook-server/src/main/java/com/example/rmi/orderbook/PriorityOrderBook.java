@@ -49,31 +49,31 @@ public class PriorityOrderBook {
 		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
-		System.out.println("Trying to sell "+ sellOrder.toString());
+//		System.out.println("Trying to sell "+ sellOrder.toString());
 		String desiredSecurity = sellOrder.getSecurityId();		
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-			System.out.println("require for "+ sellOrder.getClientId());
+//			System.out.println("require for "+ sellOrder.getClientId());
 			requireClientDoesntExist(buyQueueForSecurity, sellOrder);
-			System.out.println("match pq. Dump: \n");
-			System.out.println(this);
-			System.out.println("====================");
+//			System.out.println("match pq. \n Dump: \n");
+//			System.out.println(this);
+//			System.out.println("=========END dump =========");
 			transactionValue = match(buyQueueForSecurity, sellOrder);
 		}
-		else{
-			System.out.println( "sell - Pq no Match for "+ desiredSecurity +".Dumping: \n"+ this.toString() );
-			System.out.println(" =========END dump =========");
-		}
+//		else{
+//			System.out.println( "sell - Pq no Match for "+ desiredSecurity +".\nDumping: \n"+ this.toString() );
+//			System.out.println(" =========END dump =========");
+//		}
 		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
 		if(sellOrder.getUnits() > 0){
 			if(sellMap.containsKey(desiredSecurity)){				
-				System.out.println("sell - queuing "+ sellOrder.toString());
+//				System.out.println("sell - queuing "+ sellOrder.toString());
 				sellMap.get(desiredSecurity).offer(sellOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
-				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellingComparator());
-				System.out.println("sell - queuing with new queue:  "+ sellOrder.toString());
+				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellSideComparator());
+//				System.out.println("sell - queuing with new queue:  "+ sellOrder.toString());
 				pq.offer(sellOrder);
 				sellMap.put(desiredSecurity, pq);
 			}
@@ -112,7 +112,7 @@ public class PriorityOrderBook {
 				buyMap.get(desiredSecurity).offer(buyOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
-				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuyingComparator());
+				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuySideComparator());
 //				System.out.println("buy - queuing with new queue: "+ buyOrder.toString());
 				pq.offer(buyOrder);
 				buyMap.put(desiredSecurity, pq);
@@ -128,8 +128,9 @@ public class PriorityOrderBook {
 		List<Order> st = pq.stream()
 			    .filter(o -> o.getClientId().equals(order.getClientId())).collect(Collectors.toList());
 		if(st.size() >0){
-			throw new IllegalArgumentException(order.getClientId()+
+			System.err.println(order.getClientId()+
 			" is Trying to buy and Sell the same security, which we don't allow");
+			throw new IllegalArgumentException();
 		}
 	}
 	
@@ -236,7 +237,9 @@ public class PriorityOrderBook {
 	}
 
 	/**
-	 * Dumps all orders from map into ret.
+	 * Dumps all orders from map into ret respecting it's actual priority in the queue.
+	 * Note that doing this requires duplicating each queue given that the only real way
+	 * to know the ordering is by using poll, which is destructive is used in our internal state.
 	 * @param ret 
 	 * 			a set to add all orders contained by the map
 	 * @param map
@@ -246,8 +249,16 @@ public class PriorityOrderBook {
 		Set<String> keys = map.keySet();
 		for (String key : keys) {
 			PriorityBlockingQueue<Order> securitiesForKey = map.get(key);
+			PriorityBlockingQueue<Order> securitiesForKeyClone = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, 
+					securitiesForKey.comparator());
 			for (Order order : securitiesForKey) {
-				ret.add(order);
+//				System.out.println("Offered "+ order);
+				securitiesForKeyClone.offer(order);
+			}
+			while(!securitiesForKeyClone.isEmpty()){
+				Order polled = securitiesForKeyClone.poll();
+//				System.out.println("Polled "+ polled);
+				ret.add(polled);
 			}
 		}
 	}
@@ -272,8 +283,14 @@ public class PriorityOrderBook {
 		return sb.toString();
 	}
 
-	static class BuyingComparator implements Comparator<Order> {
+	static class BuySideComparator implements Comparator<Order> {
 
+		/**
+		 * The orders are listed Highest to Lowest on the Buy Side, we do the opposite of natural order on the value.
+		 * Returns: a positive integer if Order one is of LESS value than Order two.
+		 * A negative integer if Order one is of GREATER value than Order two.
+		 * or, if they are of the same value, it prioritizes orders that arrived earlier. 
+		 */
 		public int compare(Order one, Order two) {
 			if(!one.getSecurityId().equals(two.getSecurityId())){
 				System.err.println("These orders are not comparable, they need to be for the same security");
@@ -283,13 +300,18 @@ public class PriorityOrderBook {
 			if(naturalOrder == 0){
 				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
-			//The orders are listed Highest to Lowest on the Buy Side, natural sorting on value
-			return naturalOrder;
+			return -(naturalOrder);
 		}
 	}
 
-	static class SellingComparator implements Comparator<Order> {
+	static class SellSideComparator implements Comparator<Order> {
 
+		/**
+		 * Because orders are listed Lowest to Highest on the Sell Side, we use natural ordering.
+		 * Returns: a positive integer if Order one is of GREATER value than Order two.
+		 * a negative integer if Order one is of LESS value than Order two.
+		 * or, if they are of the same value, it prioritizes orders that arrived earlier. 
+		 */
 		public int compare(Order one, Order two) {
 			if(!one.getSecurityId().equals(two.getSecurityId())){
 				System.err.println("These orders are not comparable, they need to be for the same security");
@@ -299,8 +321,7 @@ public class PriorityOrderBook {
 			if(naturalOrder == 0){
 				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
-			//The orders are listed Lowest to Highest on the Sell Side, we do the opposite of natural order on the value
-			return -(naturalOrder);
+			return naturalOrder;
 		}
 	}
 
