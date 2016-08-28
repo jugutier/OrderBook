@@ -120,8 +120,8 @@ public class Order implements Serializable {
 	@Override
 	public String toString() {
 		return "Order [CLIENT=" + clientId + ", SECURITY=" + securityId
-				+ ", AMOUNT=" + units + ", VALUE=" + value + ", isBuying="
-				+ (isBuying? "YES":"NO") + ", timestamp=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
+				+ ", AMOUNT=" + units + ", VALUE=" + value + ", ISBUYING="
+				+ (isBuying? "YES":"NO") + ", TIMESTAMP=" + Analyzer.milliSecondsToTimestamp(timestamp) + "]";
 	}
 
 }

@@ -2,7 +2,7 @@ package com.example.rmi.orderbook.server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.Set;
+import java.util.List;
 
 import com.example.rmi.orderbook.Order;
 import com.example.rmi.orderbook.client.OrderBookClientHandle;
@@ -21,11 +21,11 @@ public interface OrderBookService extends Remote {
 	 * a) a secure remote terminal
 	 * b) physical access
 	 * c) no access at all.
-	 * @return lists current active orders
+	 * @return an priority - ordered list with current active orders
 	 * @throws RemoteException
 	 *             if the client-server connection drops.
 	 */
-	Set<Order> listOrders() throws RemoteException;
+	List<Order> listOrders() throws RemoteException;
 
 	/**
 	 * Books an order into the value-time priority queue.
@@ -50,4 +50,12 @@ public interface OrderBookService extends Remote {
 	 */
 	void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
 
+	/**
+	 * Sent by a client that wants to exit the session, thus canceling all his remaining orders placed.
+	 * @param clientId
+	 * 		The client's unique identifier
+	 * @throws RemoteException
+	 *             if the client-server connection drops.
+	 */
+	void clientExits(String clientId) throws RemoteException;
 }
