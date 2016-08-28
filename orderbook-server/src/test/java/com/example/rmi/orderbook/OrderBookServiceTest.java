@@ -229,11 +229,17 @@ public class OrderBookServiceTest {
 				false , System.currentTimeMillis(), clientHandler);
 		book.sell(sellOrder);
 	}
-	//The "cheapest" sell order in value is the BEST candidate to get
-	//a buyer, put it first in the pq.
+	
+	/**
+	 * Testing that the SellSideComparator sorts from less value to great value.
+	 * (i.e Natural Ordering)
+	 * @throws RemoteException
+	 */
 	@Test
 	public void sellingComparator() throws RemoteException {
-		Comparator<Order> comp = new PriorityOrderBook.SellingComparator();
+		//The "cheapest" sell order in value is the BEST candidate to get
+		//a buyer, put it first in the pq.
+		PriorityOrderBook.SellSideComparator comp = new PriorityOrderBook.SellSideComparator();
 
 		Order one = new Order(SELLER1, SECURITY, 1, 9.0,
 				false , 1, clientHandler);
@@ -241,10 +247,10 @@ public class OrderBookServiceTest {
 		Order two = new Order(SELLER1, SECURITY, 1, 10.0,
 				false , 1, clientHandler);	
 
-		int greaterThan = comp.compare(one, two);
+		int lessThan = comp.compare(one, two);
 
 		//same time, lowest value goes first in the pq
-		assertEquals(true, new Boolean(greaterThan > 0 ) );
+		assertEquals(true, new Boolean(lessThan < 0 ) );
 
 		one = new Order(SELLER1, SECURITY, 1, 10.0,
 				false , 1, clientHandler);
@@ -253,7 +259,7 @@ public class OrderBookServiceTest {
 				false , 2, clientHandler);
 
 		int equalButTimeWins = comp.compare(one, two);
-		//same value, first order in time goes first in the pq
+		//same value, earliest to arrive goes first in the pq
 		assertEquals(true, new Boolean(equalButTimeWins > 0 ) );
 
 
@@ -263,16 +269,20 @@ public class OrderBookServiceTest {
 		two = new Order(SELLER1, SECURITY, 1, 9.0,
 				false , 1, clientHandler);	
 
-		int lessThan = comp.compare(one, two);
+		int greaterThan = comp.compare(one, two);
 		//same time, lowest value wins
-		assertEquals(true, new Boolean(lessThan < 0 ) );
+		assertEquals(true, new Boolean(greaterThan > 0 ) );
 
 
 	}
 
+	/**
+	 * Testing that the BuySideComparator sorts from greater value to less value.
+	 * @throws RemoteException
+	 */
 	@Test
 	public void buyingComparator() throws RemoteException {
-		Comparator<Order> comp = new PriorityOrderBook.BuyingComparator();
+		PriorityOrderBook.BuySideComparator comp = new PriorityOrderBook.BuySideComparator();
 		Order one = new Order(BUYER1, SECURITY, 1, 10.0,
 				true , 1, clientHandler);
 
@@ -292,7 +302,7 @@ public class OrderBookServiceTest {
 
 		int greaterThan = comp.compare(one, two);
 		//same time, highest value wins
-		assertEquals(true, new Boolean(greaterThan > 0 ) );
+		assertEquals(true, new Boolean(greaterThan < 0 ) );
 
 
 		one = new Order(BUYER1, SECURITY, 1, 9.0,
@@ -303,12 +313,19 @@ public class OrderBookServiceTest {
 
 		int lessThan = comp.compare(one, two);
 		//same time, highest value wins
-		assertEquals(true, new Boolean(lessThan < 0 ) );
+		assertEquals(true, new Boolean(lessThan > 0 ) );
 
 	}
 
+	/**
+	 * A sell order arrives for less units than several queued applicable buy orders.
+	 * 
+	 * Expected: We partially fulfill the order thus satisfying the buyer 
+	 * and partially completing the sellers order.
+	 * @throws RemoteException
+	 */
 	@Test
-	public void edgeCase() throws RemoteException {
+	public void advancedPartialSell() throws RemoteException {
 		//		SECURITY=GOOG AMOUNT=500 VALUE=430.0 ISBUYING=YES
 		//
 		//		SECURITY=GOOG AMOUNT=1000 VALUE=435.5 ISBUYING=YES
@@ -324,7 +341,7 @@ public class OrderBookServiceTest {
 				true , 2, clientHandler);
 		book.buy(two);
 		
-		Order three = new Order(SELLER1, SECURITY, 1200, 9.0,
+		Order three = new Order(SELLER1, SECURITY, 1200, 429.0,
 				false , 3, clientHandler);
 		
 		Double transactionValue = book.sell(three);
@@ -332,16 +349,13 @@ public class OrderBookServiceTest {
 		List<Order> remainingOrders = book.getAllOrders();
 		//Only one order should be in the book
 		assertEquals(1, remainingOrders.size());
-		//it should be order2
+		//it should be order1 because we satisfied order2 first
 		Order remainingOrder = remainingOrders.iterator().next();
-		assertEquals(two , remainingOrder);
-		
-		
+		assertEquals(one , remainingOrder);
+		//and it still has 300 units to place.		
 		assertEquals(new Integer(300) , remainingOrder.getUnits());
-		
-		assertEquals(new Double(430.0*500+435.5*700) ,transactionValue);
-
-
+		//the transaction ran at this value, considering the units traded.
+		assertEquals(new Double(435.5*1000 + 430.0*200) ,transactionValue);
 	}
 
 }
