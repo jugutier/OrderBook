@@ -49,31 +49,31 @@ public class PriorityOrderBook {
 		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
-//		System.out.println("Trying to sell "+ sellOrder.toString());
+		//		System.out.println("Trying to sell "+ sellOrder.toString());
 		String desiredSecurity = sellOrder.getSecurityId();		
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> buyQueueForSecurity = buyMap.get(desiredSecurity);
 		if(buyQueueForSecurity != null){
-//			System.out.println("require for "+ sellOrder.getClientId());
+			//			System.out.println("require for "+ sellOrder.getClientId());
 			requireClientDoesntExist(buyQueueForSecurity, sellOrder);
-//			System.out.println("match pq. \n Dump: \n");
-//			System.out.println(this);
-//			System.out.println("=========END dump =========");
+			//			System.out.println("match pq. \n Dump: \n");
+			//			System.out.println(this);
+			//			System.out.println("=========END dump =========");
 			transactionValue = match(buyQueueForSecurity, sellOrder);
 		}
-//		else{
-//			System.out.println( "sell - Pq no Match for "+ desiredSecurity +".\nDumping: \n"+ this.toString() );
-//			System.out.println(" =========END dump =========");
-//		}
+		//		else{
+		//			System.out.println( "sell - Pq no Match for "+ desiredSecurity +".\nDumping: \n"+ this.toString() );
+		//			System.out.println(" =========END dump =========");
+		//		}
 		//2. If we still have sell units (i.e no match or partially fulfilled it), queue it.
 		if(sellOrder.getUnits() > 0){
 			if(sellMap.containsKey(desiredSecurity)){				
-//				System.out.println("sell - queuing "+ sellOrder.toString());
+				//				System.out.println("sell - queuing "+ sellOrder.toString());
 				sellMap.get(desiredSecurity).offer(sellOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new SellSideComparator());
-//				System.out.println("sell - queuing with new queue:  "+ sellOrder.toString());
+				//				System.out.println("sell - queuing with new queue:  "+ sellOrder.toString());
 				pq.offer(sellOrder);
 				sellMap.put(desiredSecurity, pq);
 			}
@@ -95,7 +95,7 @@ public class PriorityOrderBook {
 			throw new IllegalArgumentException("Attempted buying a selling order");
 		}
 
-//		System.out.println("Trying to buy "+ buyOrder.toString());
+		//		System.out.println("Trying to buy "+ buyOrder.toString());
 		String desiredSecurity = buyOrder.getSecurityId();
 		Double transactionValue = 0.0;
 		PriorityBlockingQueue<Order> sellQueueForSecurity = sellMap.get(desiredSecurity);
@@ -103,37 +103,37 @@ public class PriorityOrderBook {
 			requireClientDoesntExist(sellQueueForSecurity, buyOrder);
 			transactionValue = match(sellQueueForSecurity, buyOrder);
 		}
-//		else{
-//			System.out.println("buy pq No match " + desiredSecurity);
-//		}
+		//		else{
+		//			System.out.println("buy pq No match " + desiredSecurity);
+		//		}
 		if(buyOrder.getUnits() > 0){
 			if(buyMap.containsKey(desiredSecurity)){				
-//				System.out.println("buy - queuing \n"+ buyOrder.toString());
+				//				System.out.println("buy - queuing \n"+ buyOrder.toString());
 				buyMap.get(desiredSecurity).offer(buyOrder);
 			}else{
 				//Critical section: creating and adding a new queue for an non-existing security.
 				PriorityBlockingQueue<Order> pq = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, new BuySideComparator());
-//				System.out.println("buy - queuing with new queue: "+ buyOrder.toString());
+				//				System.out.println("buy - queuing with new queue: "+ buyOrder.toString());
 				pq.offer(buyOrder);
 				buyMap.put(desiredSecurity, pq);
 			}
 		}
 		return transactionValue;
 	}
-	
+
 	// we expect that buyer & seller can't be the same user for the same security.
 	// otherwise we would have to iterate the pq in case the bestcandidate 
 	// is one of the same user's orders.
 	private void requireClientDoesntExist(PriorityBlockingQueue<Order> pq, Order order){
 		List<Order> st = pq.stream()
-			    .filter(o -> o.getClientId().equals(order.getClientId())).collect(Collectors.toList());
+				.filter(o -> o.getClientId().equals(order.getClientId())).collect(Collectors.toList());
 		if(st.size() >0){
 			System.err.println(order.getClientId()+
-			" is Trying to buy and Sell the same security, which we don't allow");
+					" is Trying to buy and Sell the same security, which we don't allow");
 			throw new IllegalArgumentException();
 		}
 	}
-	
+
 	private Double match(PriorityBlockingQueue<Order> pq, Order o) throws RemoteException{
 		Order bestCandidate = pq.peek();
 		if(bestCandidate == null || o.getUnits() == 0){
@@ -142,78 +142,78 @@ public class PriorityOrderBook {
 		String security = o.getSecurityId();
 		Double transactionValue = bestCandidate.getValue();	
 		int placedUnits = 0;
-//		System.out.println("o -> " + o.getValue() + " best -> " + bestCandidate.getValue());
+		//		System.out.println("o -> " + o.getValue() + " best -> " + bestCandidate.getValue());
 		boolean shouldMakeTransaction = o.isBuying()?
 				(o.getValue() >= transactionValue):
 					(o.getValue() <= transactionValue);
-		if(	shouldMakeTransaction){			
-			int oUnits = o.getUnits();
-			int bestCandidateUnits = bestCandidate.getUnits();
+				if(	shouldMakeTransaction){			
+					int oUnits = o.getUnits();
+					int bestCandidateUnits = bestCandidate.getUnits();
 
-			if(oUnits > bestCandidateUnits){
-				placedUnits = bestCandidateUnits;
-				o.setUnits(oUnits - bestCandidateUnits);
-				transactionValue = bestCandidate.getValue();
-				o.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						o.isBuying());
+					if(oUnits > bestCandidateUnits){
+						placedUnits = bestCandidateUnits;
+						o.setUnits(oUnits - bestCandidateUnits);
+						transactionValue = bestCandidate.getValue();
+						o.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								o.isBuying());
 
-				bestCandidate.setUnits(0);				
-				bestCandidate.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						bestCandidate.isBuying());
-				pq.remove(bestCandidate);
-			}else if(oUnits < bestCandidateUnits){
-				placedUnits = oUnits;
-				o.setUnits(0);
-				o.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						o.isBuying());
+						bestCandidate.setUnits(0);				
+						bestCandidate.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								bestCandidate.isBuying());
+						pq.remove(bestCandidate);
+					}else if(oUnits < bestCandidateUnits){
+						placedUnits = oUnits;
+						o.setUnits(0);
+						o.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								o.isBuying());
 
-				bestCandidate.setUnits(bestCandidateUnits - oUnits);				
-				bestCandidate.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						bestCandidate.isBuying());
-			}else{
-				placedUnits = oUnits;//either one... 
-				o.setUnits(0);				
-				o.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						o.isBuying());
-				bestCandidate.setUnits(0);
-				bestCandidate.getClientHandle().
-				notifyOrderMatched(security, 
-						placedUnits, 
-						transactionValue,
-						bestCandidate.isBuying());
-				pq.remove(bestCandidate);
-			}
-			//If we still have units, attempt to match recursively
-			return transactionValue * placedUnits + match(pq,o);
-		}
-		return transactionValue;
+						bestCandidate.setUnits(bestCandidateUnits - oUnits);				
+						bestCandidate.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								bestCandidate.isBuying());
+					}else{
+						placedUnits = oUnits;//either one... 
+						o.setUnits(0);				
+						o.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								o.isBuying());
+						bestCandidate.setUnits(0);
+						bestCandidate.getClientHandle().
+						notifyOrderMatched(security, 
+								placedUnits, 
+								transactionValue,
+								bestCandidate.isBuying());
+						pq.remove(bestCandidate);
+					}
+					//If we still have units, attempt to match recursively
+					return transactionValue * placedUnits + match(pq,o);
+				}
+				return transactionValue;
 	}
 
 	public void clear() {
 		buyMap.clear();
 		sellMap.clear();		
 	}
-	
+
 	public void remove(String clientId) {
 		removeFromMap(clientId, buyMap);
 		removeFromMap(clientId, sellMap);
 	}
-	
+
 	/**
 	 * Removes from a given map, all orders that where placed by a client.
 	 * @param clientId
@@ -237,6 +237,50 @@ public class PriorityOrderBook {
 	}
 
 	/**
+	 * Updates an existing order in the queue following this criteria:
+	 * 1.	quantity decreases, price equals, keep priority - in-place
+	 * 2.	price changes, remove add
+     * 3.	quantity increases, price equals, remove add. (lose priority)
+	 * @param orderToUpdate
+	 * @throws RemoteException 
+	 */
+	public void update(Order orderToUpdate) throws RemoteException {
+		Map<String,PriorityBlockingQueue<Order>> sideToUpdateMap;
+		if(orderToUpdate.isBuying()){
+			sideToUpdateMap = buyMap;
+		}else{
+			sideToUpdateMap = sellMap;
+		}
+		PriorityBlockingQueue<Order> securitiesForKey = sideToUpdateMap.get(orderToUpdate
+				.getSecurityId());
+		Order removeAddOrder = null;
+		boolean success = false;
+		for (Order order : securitiesForKey) {
+			if(order.getOrderId().equals(orderToUpdate.getOrderId())){
+				if(orderToUpdate.getValue().equals(order.getValue())){
+					if(orderToUpdate.getUnits() < order.getUnits()){
+						//1. quantity decreases, price equals, keep priority - in-place
+						order.setUnits(orderToUpdate.getUnits());	
+						order.setTimestamp(orderToUpdate.getTimestamp());
+						success = true;
+						break;
+					}
+				}
+				//2.price changes, remove add
+				//3.quantity increases, price equals, remove add. (lose priority)
+				removeAddOrder = order;
+				break;					
+			}
+		}
+		if(removeAddOrder != null){
+			securitiesForKey.remove(removeAddOrder);
+			securitiesForKey.offer(orderToUpdate);
+			success = true;
+		}
+		orderToUpdate.getClientHandle().notifyOrderUpdated(orderToUpdate.getOrderId().toString(), success);
+	}
+
+	/**
 	 * Dumps all orders from map into ret respecting it's actual priority in the queue.
 	 * Note that doing this requires duplicating each queue given that the only real way
 	 * to know the ordering is by using poll, which is destructive is used in our internal state.
@@ -252,12 +296,12 @@ public class PriorityOrderBook {
 			PriorityBlockingQueue<Order> securitiesForKeyClone = new PriorityBlockingQueue<Order>(INITIAL_CAPACITY, 
 					securitiesForKey.comparator());
 			for (Order order : securitiesForKey) {
-//				System.out.println("Offered "+ order);
+				//				System.out.println("Offered "+ order);
 				securitiesForKeyClone.offer(order);
 			}
 			while(!securitiesForKeyClone.isEmpty()){
 				Order polled = securitiesForKeyClone.poll();
-//				System.out.println("Polled "+ polled);
+				//				System.out.println("Polled "+ polled);
 				ret.add(polled);
 			}
 		}
@@ -298,7 +342,7 @@ public class PriorityOrderBook {
 			}
 			int naturalOrder = Double.compare(one.getValue() , two.getValue());
 			if(naturalOrder == 0){
-				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
+				return   Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
 			return -(naturalOrder);
 		}
@@ -319,10 +363,12 @@ public class PriorityOrderBook {
 			}
 			int naturalOrder = Double.compare(one.getValue() , two.getValue());
 			if(naturalOrder == 0){
-				return  - Long.compare(one.getTimestamp(), two.getTimestamp());
+				return   Long.compare(one.getTimestamp(), two.getTimestamp());
 			}
 			return naturalOrder;
 		}
 	}
+
+
 
 }

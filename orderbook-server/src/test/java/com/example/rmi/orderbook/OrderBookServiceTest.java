@@ -260,7 +260,7 @@ public class OrderBookServiceTest {
 
 		int equalButTimeWins = comp.compare(one, two);
 		//same value, earliest to arrive goes first in the pq
-		assertEquals(true, new Boolean(equalButTimeWins > 0 ) );
+		assertEquals(true, new Boolean(equalButTimeWins < 0 ) );
 
 
 		one = new Order(SELLER1, SECURITY, 1, 10.0,
@@ -291,7 +291,7 @@ public class OrderBookServiceTest {
 
 		int equalButTimeWins = comp.compare(one, two);
 
-		assertEquals(true, new Boolean(equalButTimeWins > 0 ) );
+		assertEquals(true, new Boolean(equalButTimeWins < 0 ) );
 
 
 		one = new Order(BUYER1, SECURITY, 1, 10.0,
@@ -357,5 +357,37 @@ public class OrderBookServiceTest {
 		//the transaction ran at this value, considering the units traded.
 		assertEquals(new Double(435.5*1000 + 430.0*200) ,transactionValue);
 	}
+	
+	
+	@Test
+	public void updateOrder() throws RemoteException {
+		
+		Order one = new Order(BUYER1, SECURITY, 1, 20.0,
+				true , 1, clientHandler);
+		
+		book.buy(one);
+		
+		Order two = new Order(BUYER2, SECURITY, 1, 20.0,
+				true , 2, clientHandler);
+		book.buy(two);
+		System.out.println(book);
+		Order oneUpdate = new Order(0L, BUYER1, SECURITY, 2, 20.0,
+				true , 3, clientHandler);
+		book.update(oneUpdate);
+		
+		
+		List<Order> remainingOrders = book.getAllOrders();
+		System.out.println(book);
+		
+		//Both orders remain in the book
+		assertEquals(2, remainingOrders.size());
+		//order one had the lead but goes down the queue after the update.
+		Order firstOrder = remainingOrders.iterator().next();
+		assertEquals(two, firstOrder);
+		
+		
+	}
+	
+	
 
 }

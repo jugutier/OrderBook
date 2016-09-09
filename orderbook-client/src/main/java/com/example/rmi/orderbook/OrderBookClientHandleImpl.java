@@ -75,5 +75,21 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 		transactions.add(logTransaction);
 		System.out.println(logTransaction);	
 	}
+
+	@Override
+	public void notifyOrderUpdated(String orderId, boolean success) throws RemoteException {
+		StringBuilder sb = new StringBuilder();
+		sb.append(clientId)
+		.append("-> Order update ")
+		.append(success?"succesful ": "failed ")
+		.append(orderId)
+		.append(" at ")
+		.append(Analyzer.milliSecondsToTimestamp(System.currentTimeMillis()));
+		
+		String logTransaction = sb.toString();
+		transactions.add(logTransaction);
+		System.out.println(logTransaction);	
+		
+	}
 	
 }

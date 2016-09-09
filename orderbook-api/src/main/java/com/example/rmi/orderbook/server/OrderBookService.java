@@ -58,4 +58,30 @@ public interface OrderBookService extends Remote {
 	 *             if the client-server connection drops.
 	 */
 	void clientExits(String clientId) throws RemoteException;
+	
+	
+	/**
+	 * Updates an existing Booked order into the value-time priority queue.
+	 * 
+	 * We require many parameters instead of the Order object because marshalling
+	 *  becomes more efficient through the net in this way.
+	 *
+	 * @param orderId
+	 * 			the order id to be affected
+	 * @param clientId
+	 *            the client's unique identifier
+	 * @param securityId
+	 *            the security unique identifier
+	 * @param amount
+	 *            the value offered
+	 * @param value
+	 *            the value offered
+	 * @param clientHandler
+	 *            a remote handler for the service to notify clients
+	 * @param isBuying
+	 * 			boolean value to indicate if its a buying or selling order
+	 * @throws RemoteException
+	 *             if the client-server connection drops.
+	 */
+	void updateOrder(Long orderId, String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
 }

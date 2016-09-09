@@ -33,5 +33,16 @@ public interface OrderBookClientHandle extends Remote {
 	 */
 	void notifyOrderCancelled(String securityId) throws RemoteException;
 	
+	/**
+	 * Notifies the client when an order gets successfully updated.
+	 * @param orderId
+	 * 			the unique orderId that was successfully updated.
+	 * @param success
+	 * 			true if the update was successful, false if the id was bogus.
+	 * @throws RemoteException
+	 * 			If the connection drops
+	 */
+	void notifyOrderUpdated(String orderId, boolean success) throws RemoteException;
+	
 	
 }
