@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import java.rmi.RemoteException;
-import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Before;
@@ -358,36 +357,108 @@ public class OrderBookServiceTest {
 		assertEquals(new Double(435.5*1000 + 430.0*200) ,transactionValue);
 	}
 	
-	
+	/**
+	 * Order Update
+	 * 1. If price changes, you lose priority regardless of the rest of the values.
+	 * @throws RemoteException
+	 */
 	@Test
-	public void updateOrder() throws RemoteException {
+	public void updateOrderPriceChanges() throws RemoteException {
 		
-		Order one = new Order(BUYER1, SECURITY, 1, 20.0,
-				true , 1, clientHandler);
+		int orderUnits = 20;
+		
+		Order one = new Order(BUYER1, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
 		
 		book.buy(one);
 		
-		Order two = new Order(BUYER2, SECURITY, 1, 20.0,
-				true , 2, clientHandler);
+		Order two = new Order(BUYER2, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		
 		book.buy(two);
+		
 		System.out.println(book);
-		Order oneUpdate = new Order(0L, BUYER1, SECURITY, 2, 20.0,
-				true , 3, clientHandler);
+		
+		Order oneUpdate = new Order(one.getOrderId(), BUYER1, SECURITY, orderUnits/2, 19.0,
+				true , System.currentTimeMillis() + 1000, clientHandler);
 		book.update(oneUpdate);
 		
 		
 		List<Order> remainingOrders = book.getAllOrders();
 		System.out.println(book);
 		
-		//Both orders remain in the book
-		assertEquals(2, remainingOrders.size());
-		//order one had the lead but goes down the queue after the update.
-		Order firstOrder = remainingOrders.iterator().next();
-		assertEquals(two, firstOrder);
-		
+		//order one had the lead but lost it because there was a price change.
+		Order leadingOrder = remainingOrders.iterator().next();
+		assertEquals(two, leadingOrder);		
 		
 	}
 	
+	/**
+	 * Update order
+	 * 2. If quantity increases, even if price remains the same, you lose priority.
+	 * @throws RemoteException
+	 */
+	@Test
+	public void updateOrderQuantityIncreases() throws RemoteException {
+		
+		int orderUnits = 10;
+		
+		Order one = new Order(BUYER1, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		
+		book.buy(one);
+		
+		Order two = new Order(BUYER2, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		
+		book.buy(two);
+		
+		System.out.println(book);
+		
+		Order oneUpdate = new Order(one.getOrderId(), BUYER1, SECURITY, orderUnits*2, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		book.update(oneUpdate);
+		
+		
+		List<Order> remainingOrders = book.getAllOrders();
+		System.out.println(book);
+		
+		//order one had the lead but goes down the queue after the update.
+		Order leadingOrder = remainingOrders.iterator().next();
+		assertEquals(two, leadingOrder);		
+	}
 	
+	/**
+	 * Update Order
+	 * 3. **ONLY** If quantity decreases and price remains the same, you keep priority.
+	 * @throws RemoteException
+	 */
+	@Test
+	public void updateOrderQuantityDecreases() throws RemoteException {
+		
+		int orderUnits = 20;
+		
+		Order one = new Order(BUYER1, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		
+		book.buy(one);
+		
+		Order two = new Order(BUYER2, SECURITY, orderUnits, 20.0,
+				true , System.currentTimeMillis(), clientHandler);
+		book.buy(two);
+		System.out.println(book);
+		Order oneUpdate = new Order(one.getOrderId(), BUYER1, SECURITY, orderUnits/2, 20.0,
+				true , System.currentTimeMillis() + 1000, clientHandler);
+		book.update(oneUpdate);
+		
+		
+		List<Order> remainingOrders = book.getAllOrders();
+		System.out.println(book);
+		
+		//order one had the lead and remains leading.
+		Order leadingOrder = remainingOrders.iterator().next();
+		assertEquals(one, leadingOrder);		
+		
+	}	
 
 }

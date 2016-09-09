@@ -53,22 +53,26 @@ public class OrderBookClient {
 			});
 
 			do{
-				System.out.println("Enter your command:");
-				String[] input = new BufferedReader(new InputStreamReader(System.in)).readLine().split(" ");
-				if(input.length == 1 ){
-					if(input[0].equalsIgnoreCase("LIST")){
+				System.out.println("Enter your command(s) separated by a new line (return key):");
+				BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+				String line;
+				while( !(line = br.readLine()).equals("") ){
+					String[] input = line.split(" ");
+					if(input.length == 1 && input[0].equalsIgnoreCase("LIST")){
 						listAllOrders(serverHandle, clientHandler);
-					}else if(input[0].equalsIgnoreCase("UPDATE")){
-						System.out.println("Enter the order to update (add the ID):");
-						String[] updateInput = new BufferedReader(new InputStreamReader(System.in)).readLine().split(" ");
-						updateOrder(clientId, serverHandle, clientHandler, new Analyzer(updateInput));
+					}else{
+						try{
+							parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
+						}catch(NullPointerException e){
+							System.err.println("Error: " + e.getMessage());
+							System.err.println("A transaction should look like this: "
+									+ "SECURITY=AAPL AMOUNT=20 VALUE=20.19 ISBUYING=YES");
+						}
 					}
-				}else{
-					parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
 				}
 			}while(true);
 		} catch(Exception e){
-			System.err.println("Can't connect now... Try again when trade sessions open");
+			System.err.println("Can't connect now... Try again when trade sessions open" + e);
 			System.exit(-1);
 		}finally {
 			finishSession();
@@ -91,31 +95,25 @@ public class OrderBookClient {
 	}
 
 	private static void parseTransaction(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
-		if(command.get("ORDERID") != null){
-			System.err.println("Must NOT enter an ORDERID");
-			System.exit(-1);
+		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
+		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
+		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
+		boolean isBuying = Objects.requireNonNull(command.get("ISBUYING"), "Must indicate a ISBUYING (yes/no)").toString().equalsIgnoreCase("yes");
+		
+		Object orderId = command.get("ORDERID");
+		if(orderId != null){
+			Long orderIdValue = Long.valueOf(orderId.toString());
+			serverHandle.updateOrder(orderIdValue, clientId, securityId, amount, value, isBuying, clientHandler);
+		}else{
+			try{
+				serverHandle.bookOrder(clientId, securityId, amount, value, isBuying, clientHandler);
+			}catch(IllegalArgumentException e){
+				System.err.println(e.getMessage());
+			}
 		}
-		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
-		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
-		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
-		boolean isBuying = Objects.requireNonNull(command.get("ISBUYING"), "Must indicate a ISBUYING (yes/no)").toString().equalsIgnoreCase("yes");
-
-		serverHandle.bookOrder(clientId, securityId, amount, value, isBuying, clientHandler);
 
 	}
-	
-	private static void updateOrder(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
-
-		Long orderId = Long.valueOf(Objects.requireNonNull(command.get("ORDERID"), "Must enter an ORDERID").toString());
-		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
-		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
-		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
-		boolean isBuying = Objects.requireNonNull(command.get("ISBUYING"), "Must indicate a ISBUYING (yes/no)").toString().equalsIgnoreCase("yes");
-
-		serverHandle.updateOrder(orderId, clientId, securityId, amount, value, isBuying, clientHandler);
-
-	}
-	
+		
 	/* For live testing only. */
 	private static void listAllOrders(OrderBookService serverHandle, OrderBookClientHandleImpl clientHandle) throws RemoteException {
 		System.out.println("=============BEGIN==============");
