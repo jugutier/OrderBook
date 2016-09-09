@@ -94,25 +94,45 @@ Passing the clientId over CLI simulates the authentication of a user. That would
 ===
 ##Trading
 
+###Placing Orders
+
 Clients prompt you to enter a transaction in the following single-line format:
 
 `SECURITY=GOOG AMOUNT=500 VALUE=430.0 ISBUYING=YES`
 
-SECURITY: The security that you want to trade.
+	SECURITY: The security that you want to trade.
 
-AMOUNT: The number of units for that security that you want to place.
+	AMOUNT: The number of units for that security that you want to place.
 
-VALUE: The limit value.
+	VALUE: The limit value.
 
-ISBUYING: YES if it is a **buying order**, NO if it is a **selling order**.
+	ISBUYING: YES if it is a buying order, NO if it is a selling order.
 
-There is an additional debugging command that can be used:
+####Note: A client is not allowed to buy and sell the same security.
+This is a design desition made to allow the matching algorithm to be general for buy & sell side.
+
+###Listing Orders
+
+Client's transaction log can be accessed through.
 
 `LIST`
 
-It dumps the server's book to inspect it's internal state. This is for debugging purposes and would **never** be something the client can see. 
+		It shows a Transaction log for that client, meaning all matches (buy & sell) that happened over the session for that current client. This would be something the client can have access to, since it's their own transactions and can't affect the market in any way.
+		Aditionally ,It dumps the server's book to inspect it's internal state. This is for debugging purposes and would never be something the client can see.
 
-Aditionally it shows a Transaction log for that client, meaning all matches (buy & sell) that happened over the session for that current client. This would be something the client can have access to, since it's their own transactions and can't affect the market in any way.
+###Updating orders
+
+Once an order is placed, through the server output console or in the client through `LIST` a unique **ORDERID** can be retrieved. Subsequent updates of that order can happen in the following format:
+
+`ORDERID=0 SECURITY=GOOG AMOUNT=500 VALUE=430.0 ISBUYING=YES`
+
+Where 0 is the number retrieved under the above instructions.
+
+When doing so the following considerations take place:
+
+1. If price changes, you lose priority regardless of the rest of the values.
+2. If quantity increases, even if price remains the same, you lose priority.
+3. **ONLY** If quantity decreases and price remains the same, you keep priority.
 
 ===
 

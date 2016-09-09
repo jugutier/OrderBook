@@ -128,9 +128,10 @@ public class PriorityOrderBook {
 		List<Order> st = pq.stream()
 				.filter(o -> o.getClientId().equals(order.getClientId())).collect(Collectors.toList());
 		if(st.size() >0){
-			System.err.println(order.getClientId()+
-					" is Trying to buy and Sell the same security, which we don't allow");
-			throw new IllegalArgumentException();
+			String msg = order.getClientId()+
+					" is Trying to buy and Sell the same security, which we don't allow";
+			System.err.println(msg);
+			throw new IllegalArgumentException(msg);
 		}
 	}
 

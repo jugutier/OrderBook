@@ -33,7 +33,7 @@ public class OrderBookServant implements OrderBookService{
 		}else{
 			orders.sell(bookedOrder);
 		}
-		System.out.println("Booked: "+ bookedOrder );
+		System.out.println(bookedOrder);
 
 
 	}
@@ -42,14 +42,13 @@ public class OrderBookServant implements OrderBookService{
 	public void updateOrder(Long orderId, String clientId, String securityId,
 			Integer amount, Double value, boolean isBuying,
 			OrderBookClientHandle clientHandler) throws RemoteException {
-		// remove and add the order id again.
 		
 		System.out.println("Updating...");
 		Order orderToUpdate = new Order(orderId, clientId, securityId, amount, value,
 				isBuying , System.currentTimeMillis(), clientHandler);
 		
 		orders.update(orderToUpdate);
-		System.out.println("Updated: "+ orderToUpdate );
+		System.out.println(orderToUpdate);
 
 	}
 
