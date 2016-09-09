@@ -26,7 +26,7 @@ public class OrderBookServant implements OrderBookService{
 			Double value, boolean isBuying,	OrderBookClientHandle clientHandler) 
 					throws RemoteException {
 		Order bookedOrder = new Order(clientId, securityId, amount, value,
-				isBuying , System.currentTimeMillis(), clientHandler);
+				isBuying, System.currentTimeMillis(), clientHandler);
 		System.out.println("Booking...");
 		if(isBuying){
 			orders.buy(bookedOrder);
@@ -45,7 +45,7 @@ public class OrderBookServant implements OrderBookService{
 		
 		System.out.println("Updating...");
 		Order orderToUpdate = new Order(orderId, clientId, securityId, amount, value,
-				isBuying , System.currentTimeMillis(), clientHandler);
+				isBuying ,  System.currentTimeMillis(),  clientHandler);
 		
 		orders.update(orderToUpdate);
 		System.out.println(orderToUpdate);

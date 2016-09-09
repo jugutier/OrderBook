@@ -262,7 +262,7 @@ public class PriorityOrderBook {
 					if(orderToUpdate.getUnits() < order.getUnits()){
 						//1. quantity decreases, price equals, keep priority - in-place
 						order.setUnits(orderToUpdate.getUnits());	
-						order.setTimestamp(orderToUpdate.getTimestamp());
+						order.setDisplayTime(orderToUpdate.getDisplayTime());
 						success = true;
 						break;
 					}
@@ -343,7 +343,7 @@ public class PriorityOrderBook {
 			}
 			int naturalOrder = Double.compare(one.getValue() , two.getValue());
 			if(naturalOrder == 0){
-				return   Long.compare(one.getTimestamp(), two.getTimestamp());
+				return   Long.compare(one.getPriorityTime(), two.getPriorityTime());
 			}
 			return -(naturalOrder);
 		}
@@ -364,7 +364,7 @@ public class PriorityOrderBook {
 			}
 			int naturalOrder = Double.compare(one.getValue() , two.getValue());
 			if(naturalOrder == 0){
-				return   Long.compare(one.getTimestamp(), two.getTimestamp());
+				return   Long.compare(one.getPriorityTime(), two.getPriorityTime());
 			}
 			return naturalOrder;
 		}
