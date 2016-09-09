@@ -9,11 +9,11 @@ import com.example.rmi.orderbook.server.OrderBookService;
 
 public class OrderBookServant implements OrderBookService{
 	private final PriorityOrderBook orders;
-	
+
 	public OrderBookServant() throws RemoteException{
 		System.out.println("Servant init");
-        this.orders = new PriorityOrderBook();
-        UnicastRemoteObject.exportObject(this, 0);
+		this.orders = new PriorityOrderBook();
+		UnicastRemoteObject.exportObject(this, 0);
 	}
 
 	@Override
@@ -35,15 +35,30 @@ public class OrderBookServant implements OrderBookService{
 		}
 		System.out.println("Booked: "+ bookedOrder );
 
-		
+
 	}
-	
+
+	@Override
+	public void updateOrder(Long orderId, String clientId, String securityId,
+			Integer amount, Double value, boolean isBuying,
+			OrderBookClientHandle clientHandler) throws RemoteException {
+		// remove and add the order id again.
+		
+		System.out.println("Updating...");
+		Order orderToUpdate = new Order(orderId, clientId, securityId, amount, value,
+				isBuying , System.currentTimeMillis(), clientHandler);
+		
+		orders.update(orderToUpdate);
+		System.out.println("Updated: "+ orderToUpdate );
+
+	}
+
 	@Override
 	public void clientExits(String clientId) {
 		System.out.println("Client "+ clientId +" has exited. We remove his orders.");
 		orders.remove(clientId);		
 	}
-	
+
 	/**
 	 * Notifies all pending orders as cancelled and shuts down the service
 	 * Note that this method is not part of the interface because 
@@ -60,6 +75,8 @@ public class OrderBookServant implements OrderBookService{
 			}
 		}		
 		orders.clear();		
-	}	
+	}
+
+
 
 }
