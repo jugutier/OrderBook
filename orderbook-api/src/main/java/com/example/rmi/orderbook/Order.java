@@ -8,6 +8,10 @@ import com.example.rmi.orderbook.util.Analyzer;
  * Abstraction for an Order. Supports concurrent users by 
  * synchronizing the amount of securities placed in this
  * order on get and set.
+ * 
+ * Also supports updating by holding a unique orderId and
+ * a priorityTime used for ordering, as well as a displayTime
+ * to be the latest update time.
  */
 public class Order implements Serializable {
 	private static final long serialVersionUID = 8822833371248140397L;
@@ -18,7 +22,8 @@ public class Order implements Serializable {
 	private Integer units;
 	private Double value;
 	private boolean isBuying;
-	private Long timestamp;
+	private Long priorityTime;
+	private Long displayTime;
 	private OrderBookClientHandle clientHandle;
 
 	/**
@@ -31,7 +36,8 @@ public class Order implements Serializable {
 		this.units = amount;
 		this.value = value;
 		this.isBuying = isBuying;
-		this.timestamp = timestamp;
+		this.priorityTime = timestamp;
+		this.displayTime = timestamp;
 		this.clientHandle = clientHandle;
 	}
 	
@@ -42,7 +48,8 @@ public class Order implements Serializable {
 		this.units = amount;
 		this.value = value;
 		this.isBuying = isBuying;
-		this.timestamp = timestamp;
+		this.priorityTime = timestamp;
+		this.displayTime = timestamp;
 		this.clientHandle = clientHandle;
 	}
 
@@ -70,9 +77,9 @@ public class Order implements Serializable {
 		}
 	}
 	
-	public void setTimestamp(Long milliseconds) {
-		synchronized(timestamp){
-			this.timestamp = milliseconds;
+	public void setDisplayTime(Long milliseconds) {
+		synchronized(displayTime){
+			this.displayTime = milliseconds;
 		}
 	}
 	
@@ -84,8 +91,16 @@ public class Order implements Serializable {
 		return isBuying;
 	}
 
-	public long getTimestamp() {
-		return timestamp;
+	public Long getDisplayTime() {
+		synchronized(displayTime){
+			return displayTime;
+		}
+	}
+	
+	public Long getPriorityTime() {
+		synchronized(priorityTime){
+			return priorityTime;
+		}
 	}
 
 	public OrderBookClientHandle getClientHandle() {
@@ -121,7 +136,7 @@ public class Order implements Serializable {
 	public String toString() {
 		return "ORDERID="+ orderId +" CLIENT=" + clientId + " SECURITY=" + securityId
 				+ " AMOUNT=" + units + " VALUE=" + value + " ISBUYING="
-				+ (isBuying? "YES":"NO") + ", TIMESTAMP=" + Analyzer.milliSecondsToTimestamp(timestamp);
+				+ (isBuying? "YES":"NO") + ", TIMESTAMP=" + Analyzer.milliSecondsToTimestamp(displayTime);
 	}
 
 }

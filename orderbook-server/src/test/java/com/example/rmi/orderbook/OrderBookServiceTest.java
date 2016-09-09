@@ -402,21 +402,22 @@ public class OrderBookServiceTest {
 	public void updateOrderQuantityIncreases() throws RemoteException {
 		
 		int orderUnits = 10;
+		Long t1 = 100000L;
 		
 		Order one = new Order(BUYER1, SECURITY, orderUnits, 20.0,
-				true , System.currentTimeMillis(), clientHandler);
+				true , t1, clientHandler);
 		
 		book.buy(one);
 		
 		Order two = new Order(BUYER2, SECURITY, orderUnits, 20.0,
-				true , System.currentTimeMillis(), clientHandler);
+				true , t1 + 100000, clientHandler);
 		
 		book.buy(two);
 		
 		System.out.println(book);
 		
 		Order oneUpdate = new Order(one.getOrderId(), BUYER1, SECURITY, orderUnits*2, 20.0,
-				true , System.currentTimeMillis(), clientHandler);
+				true , t1 + 100000*2, clientHandler);
 		book.update(oneUpdate);
 		
 		
