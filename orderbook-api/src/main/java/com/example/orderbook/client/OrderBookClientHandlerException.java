@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook.client;
+package com.example.orderbook.client;
 
 public class OrderBookClientHandlerException extends RuntimeException {
 

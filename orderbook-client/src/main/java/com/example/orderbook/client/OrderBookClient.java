@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook.client;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -10,9 +10,11 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
 
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
-import com.example.rmi.orderbook.server.OrderBookService;
-import com.example.rmi.orderbook.util.Analyzer;
+import com.example.orderbook.Order;
+import com.example.orderbook.OrderBookClientHandleImpl;
+import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.server.OrderBookService;
+import com.example.orderbook.util.Analyzer;
 
 public class OrderBookClient {
 	/** The handler is how this instance of the client gets messages from the service. **/

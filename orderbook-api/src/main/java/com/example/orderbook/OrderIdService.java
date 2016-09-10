@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 public class OrderIdService {
 

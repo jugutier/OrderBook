@@ -1,11 +1,12 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
-import com.example.rmi.orderbook.server.OrderBookService;
+import com.example.orderbook.Order;
+import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.server.OrderBookService;
 
 public class OrderBookServant implements OrderBookService{
 	private final PriorityOrderBook orders;

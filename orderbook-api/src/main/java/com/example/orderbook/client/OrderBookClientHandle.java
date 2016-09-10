@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook.client;
+package com.example.orderbook.client;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

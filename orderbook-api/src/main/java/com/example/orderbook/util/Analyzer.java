@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook.util;
+package com.example.orderbook.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

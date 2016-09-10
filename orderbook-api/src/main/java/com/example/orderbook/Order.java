@@ -1,9 +1,9 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 import java.io.Serializable;
 
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
-import com.example.rmi.orderbook.util.Analyzer;
+import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.util.Analyzer;
 /**
  * Abstraction for an Order. Supports concurrent users by 
  * synchronizing the amount of securities placed in this

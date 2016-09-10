@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
+
+import com.example.orderbook.Order;
 
 /**
  * PriorityOrderBook automatically matches viable transactions, 

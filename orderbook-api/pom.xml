@@ -3,11 +3,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>com.example.rmi</groupId>
+    <groupId>com.example</groupId>
     <artifactId>orderbook-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <groupId>com.example.rmi</groupId>
+  <groupId>com.example</groupId>
   <artifactId>orderbook-api</artifactId>
-  <name>RMI::ORDERBOOK::API</name>
+  <name>RABBITMQ::ORDERBOOK::API</name>
 </project>

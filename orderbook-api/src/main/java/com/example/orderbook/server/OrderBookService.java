@@ -1,11 +1,11 @@
-package com.example.rmi.orderbook.server;
+package com.example.orderbook.server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
 
-import com.example.rmi.orderbook.Order;
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.Order;
+import com.example.orderbook.client.OrderBookClientHandle;
 
 /**
  * Service to operate in the Order Booking of securities.

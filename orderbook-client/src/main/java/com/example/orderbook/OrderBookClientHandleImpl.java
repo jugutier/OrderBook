@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
@@ -7,8 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
-import com.example.rmi.orderbook.util.Analyzer;
+import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.util.Analyzer;
 
 /**
  * A sample implementation for {@link OrderBookClientHandle} 

@@ -1,4 +1,4 @@
-package com.example.rmi.orderbook;
+package com.example.orderbook;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -9,7 +9,9 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.example.rmi.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.Order;
+import com.example.orderbook.PriorityOrderBook;
+import com.example.orderbook.client.OrderBookClientHandle;
 
 /**
  * Tests for edge cases in the PriorityOrderBook.

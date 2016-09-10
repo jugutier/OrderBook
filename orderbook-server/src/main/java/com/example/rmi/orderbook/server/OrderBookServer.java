@@ -6,8 +6,9 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Date;
 
-import com.example.rmi.orderbook.OrderBookServant;
-import com.example.rmi.orderbook.util.Analyzer;
+import com.example.orderbook.OrderBookServant;
+import com.example.orderbook.server.OrderBookService;
+import com.example.orderbook.util.Analyzer;
 
 public class OrderBookServer {
 
