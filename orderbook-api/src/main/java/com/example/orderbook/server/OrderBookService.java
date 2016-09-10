@@ -1,7 +1,5 @@
 package com.example.orderbook.server;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.util.List;
 
 import com.example.orderbook.Order;
@@ -12,7 +10,7 @@ import com.example.orderbook.client.OrderBookClientHandle;
  * 
  * Provides a remote environment for client/server execution.
  */
-public interface OrderBookService extends Remote {
+public interface OrderBookService {
 
 	/**
 	 * This is to enable a TEST client to inspect the server state.
@@ -22,10 +20,8 @@ public interface OrderBookService extends Remote {
 	 * b) physical access
 	 * c) no access at all.
 	 * @return an priority - ordered list with current active orders
-	 * @throws RemoteException
-	 *             if the client-server connection drops.
 	 */
-	List<Order> listOrders() throws RemoteException;
+	List<Order> listOrders();
 
 	/**
 	 * Books an order into the value-time priority queue.
@@ -45,19 +41,15 @@ public interface OrderBookService extends Remote {
 	 *            a remote handler for the service to notify clients
 	 * @param isBuying
 	 * 			boolean value to indicate if its a buying or selling order
-	 * @throws RemoteException
-	 *             if the client-server connection drops.
 	 */
-	void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
+	void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler);
 
 	/**
 	 * Sent by a client that wants to exit the session, thus canceling all his remaining orders placed.
 	 * @param clientId
 	 * 		The client's unique identifier
-	 * @throws RemoteException
-	 *             if the client-server connection drops.
 	 */
-	void clientExits(String clientId) throws RemoteException;
+	void clientExits(String clientId);
 	
 	
 	/**
@@ -80,8 +72,6 @@ public interface OrderBookService extends Remote {
 	 *            a remote handler for the service to notify clients
 	 * @param isBuying
 	 * 			boolean value to indicate if its a buying or selling order
-	 * @throws RemoteException
-	 *             if the client-server connection drops.
 	 */
-	void updateOrder(Long orderId, String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler) throws RemoteException;
+	void updateOrder(Long orderId, String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler);
 }

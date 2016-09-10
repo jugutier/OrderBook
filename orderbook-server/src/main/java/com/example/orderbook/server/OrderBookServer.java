@@ -1,13 +1,10 @@
-package com.example.rmi.orderbook.server;
+package com.example.orderbook.server;
 
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.util.Date;
 
 import com.example.orderbook.OrderBookServant;
-import com.example.orderbook.server.OrderBookService;
 import com.example.orderbook.util.Analyzer;
 
 public class OrderBookServer {
@@ -24,10 +21,8 @@ public class OrderBookServer {
 			sleepUntil(start);
 
 
-			final Registry registry = LocateRegistry.getRegistry(hostname, port);
 			final OrderBookServant servant = new OrderBookServant();
 
-			registry.rebind(service, (OrderBookService)servant);
 			System.out.println("Service bound");
 
 			Runtime.getRuntime().addShutdownHook(new Thread()

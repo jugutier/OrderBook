@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.NoSuchObjectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.List;
@@ -12,7 +11,6 @@ import java.util.Objects;
 
 import com.example.orderbook.Order;
 import com.example.orderbook.OrderBookClientHandleImpl;
-import com.example.orderbook.client.OrderBookClientHandle;
 import com.example.orderbook.server.OrderBookService;
 import com.example.orderbook.util.Analyzer;
 
@@ -24,7 +22,7 @@ public class OrderBookClient {
 	/** The handler is how this instance of the client sends messages to the service. **/
 	private static OrderBookService serverHandle;
 
-	public static void main(String[] args) throws MalformedURLException, RemoteException, NotBoundException {
+	public static void main(String[] args) throws MalformedURLException, NotBoundException {
 		try{
 			Analyzer auxi = new Analyzer(args);
 			Object port = auxi.get("PORT");
@@ -86,14 +84,9 @@ public class OrderBookClient {
 
 	private static void finishSession(){
 		// Unexport any remaining client the callback manager if the server dies.
-		try {
 			serverHandle.clientExits(clientId);
-			clientHandler.unexport();
-		} catch (NoSuchObjectException e) {
-			System.err.println("Error while unexporting handler");
-		}catch (RemoteException e) {
-			System.err.println("The server is down, your orders are probably canceled already.");
-		}
+			//TODO: notify client/server
+			//clientHandler.unexport();
 	}
 
 	private static void parseTransaction(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{

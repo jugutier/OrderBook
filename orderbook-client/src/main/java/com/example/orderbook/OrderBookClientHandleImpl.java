@@ -1,8 +1,5 @@
 package com.example.orderbook;
 
-import java.rmi.NoSuchObjectException;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -25,16 +22,10 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 	private final String clientId;
 	private List<String> transactions;
 	
-    public OrderBookClientHandleImpl(final String clientId)
-            throws RemoteException {
+    public OrderBookClientHandleImpl(final String clientId){
         super();
         this.clientId = Objects.requireNonNull(clientId, "the clientId can't be null");
         this.transactions = new LinkedList<String> ();
-        UnicastRemoteObject.exportObject(this, 0);
-    }
-	
-    public void unexport() throws NoSuchObjectException {
-        UnicastRemoteObject.unexportObject(this, true);
     }
     
     public List<String> getTransactionsLog(){
@@ -42,7 +33,7 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
     }
 
 	@Override
-	public void notifyOrderMatched(String securityId, Integer amount , Double value, boolean isBuying) throws RemoteException {
+	public void notifyOrderMatched(String securityId, Integer amount , Double value, boolean isBuying){
 		StringBuilder sb = new StringBuilder();
 		sb.append(clientId)
 		.append("-> Order matched! ")
@@ -63,7 +54,7 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 	}
 
 	@Override
-	public void notifyOrderCancelled(String securityId) throws RemoteException {
+	public void notifyOrderCancelled(String securityId){
 		StringBuilder sb = new StringBuilder();
 		sb.append(clientId)
 		.append("-> Order cancelled :( ")
@@ -77,7 +68,7 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 	}
 
 	@Override
-	public void notifyOrderUpdated(String orderId, boolean success) throws RemoteException {
+	public void notifyOrderUpdated(String orderId, boolean success){
 		StringBuilder sb = new StringBuilder();
 		sb.append(clientId)
 		.append("-> Order update ")

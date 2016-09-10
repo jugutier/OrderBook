@@ -1,6 +1,5 @@
 package com.example.orderbook;
 
-import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -45,9 +44,8 @@ public class PriorityOrderBook {
 	 * 			the order to be sold
 	 * @return
 	 * 		The effective transaction value, or null if queued.
-	 * @throws RemoteException
 	 */
-	public Double sell(Order sellOrder) throws RemoteException{
+	public Double sell(Order sellOrder){
 		if(sellOrder.isBuying() || sellOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted selling a buying order");
 		}
@@ -90,9 +88,8 @@ public class PriorityOrderBook {
 	 * 			the order to be bought
 	 * @return
 	 * 		The effective transaction value, or 0 if queued.
-	 * @throws RemoteException
 	 */
-	public Double buy(Order buyOrder) throws RemoteException{
+	public Double buy(Order buyOrder) {
 		if(!buyOrder.isBuying() || buyOrder.getUnits() <= 0){
 			throw new IllegalArgumentException("Attempted buying a selling order");
 		}
@@ -137,7 +134,7 @@ public class PriorityOrderBook {
 		}
 	}
 
-	private Double match(PriorityBlockingQueue<Order> pq, Order o) throws RemoteException{
+	private Double match(PriorityBlockingQueue<Order> pq, Order o){
 		Order bestCandidate = pq.peek();
 		if(bestCandidate == null || o.getUnits() == 0){
 			return 0.0;
@@ -245,9 +242,8 @@ public class PriorityOrderBook {
 	 * 2.	price changes, remove add
      * 3.	quantity increases, price equals, remove add. (lose priority)
 	 * @param orderToUpdate
-	 * @throws RemoteException 
 	 */
-	public void update(Order orderToUpdate) throws RemoteException {
+	public void update(Order orderToUpdate){
 		Map<String,PriorityBlockingQueue<Order>> sideToUpdateMap;
 		if(orderToUpdate.isBuying()){
 			sideToUpdateMap = buyMap;

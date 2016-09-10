@@ -1,10 +1,8 @@
 package com.example.orderbook;
 
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 
-import com.example.orderbook.Order;
 import com.example.orderbook.client.OrderBookClientHandle;
 import com.example.orderbook.server.OrderBookService;
 
@@ -14,18 +12,17 @@ public class OrderBookServant implements OrderBookService{
 	public OrderBookServant() throws RemoteException{
 		System.out.println("Servant init");
 		this.orders = new PriorityOrderBook();
-		UnicastRemoteObject.exportObject(this, 0);
 	}
 
 	@Override
-	public List<Order> listOrders() throws RemoteException {
+	public List<Order> listOrders(){
 		return orders.getAllOrders();
 	}
 
 	@Override
 	public void bookOrder(String clientId, String securityId, Integer amount,
 			Double value, boolean isBuying,	OrderBookClientHandle clientHandler) 
-					throws RemoteException {
+					{
 		Order bookedOrder = new Order(clientId, securityId, amount, value,
 				isBuying, System.currentTimeMillis(), clientHandler);
 		System.out.println("Booking...");
@@ -42,7 +39,7 @@ public class OrderBookServant implements OrderBookService{
 	@Override
 	public void updateOrder(Long orderId, String clientId, String securityId,
 			Integer amount, Double value, boolean isBuying,
-			OrderBookClientHandle clientHandler) throws RemoteException {
+			OrderBookClientHandle clientHandler)  {
 		
 		System.out.println("Updating...");
 		Order orderToUpdate = new Order(orderId, clientId, securityId, amount, value,
@@ -70,7 +67,7 @@ public class OrderBookServant implements OrderBookService{
 		for (Order order : allOrders) {
 			try {
 				order.getClientHandle().notifyOrderCancelled(order.getSecurityId());
-			} catch (RemoteException e) {
+			} catch (Exception e) {
 				System.out.println("Attempted to notify a client that has probably disconnected");
 			}
 		}		
