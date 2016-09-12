@@ -9,9 +9,10 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang.SerializationUtils;
+
 import com.example.orderbook.Command;
 import com.example.orderbook.Order;
-import com.example.orderbook.OrderBookClientHandleImpl;
 import com.example.orderbook.server.OrderBookService;
 import com.example.orderbook.util.Analyzer;
 import com.rabbitmq.client.Channel;
@@ -83,6 +84,7 @@ public class OrderBookClient {
 						try{
 							Order o = parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
 							c = new Command(Command.TRADE, o);
+							
 						}catch(NullPointerException e){
 							System.err.println("Error: " + e.getMessage());
 							System.err.println("A transaction should look like this: "
@@ -90,7 +92,8 @@ public class OrderBookClient {
 						}
 					}
 					System.out.println("publish");
-					channel.basicPublish("", QUEUE_NAME, null, c.serialize());					
+					
+					channel.basicPublish("", QUEUE_NAME, null, SerializationUtils.serialize(c)/*c.serialize()*/);					
 				}
 			}while(true);
 		} catch(Exception e){

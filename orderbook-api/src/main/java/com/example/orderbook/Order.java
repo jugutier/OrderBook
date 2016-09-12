@@ -21,7 +21,7 @@ public class Order implements Serializable {
 	private String securityId;
 	private Integer units;
 	private Double value;
-	private boolean isBuying;
+	private Boolean isBuying;
 	private Long priorityTime;
 	private Long displayTime;
 	private OrderBookClientHandle clientHandle;

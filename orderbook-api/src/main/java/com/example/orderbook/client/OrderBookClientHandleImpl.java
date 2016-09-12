@@ -1,11 +1,10 @@
-package com.example.orderbook;
+package com.example.orderbook.client;
 
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-import com.example.orderbook.client.OrderBookClientHandle;
 import com.example.orderbook.util.Analyzer;
 
 /**

@@ -1,8 +1,9 @@
 package com.example.orderbook.server;
 
 import java.io.IOException;
-import java.rmi.ConnectException;
 import java.util.Date;
+
+import org.apache.commons.lang.SerializationUtils;
 
 import com.example.orderbook.Command;
 import com.example.orderbook.OrderBookServant;
@@ -21,7 +22,7 @@ public class OrderBookServer {
 	private static Connection connection;
 	private static Channel channel;
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) {
 		try{
 			final Analyzer auxi = new Analyzer(args);
 			final int port = Integer.valueOf(auxi.get("PORT").toString());
@@ -38,6 +39,8 @@ public class OrderBookServer {
 			channel = connection.createChannel();
 
 			channel.queueDeclare(QUEUE_NAME, false, false, false, null);
+			
+			channel.basicQos(1);
 			final OrderBookServant servant = new OrderBookServant();
 			
 			Consumer consumer = new DefaultConsumer(channel) {
@@ -45,12 +48,16 @@ public class OrderBookServer {
 				public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
 						throws IOException {
 					try {
-						Command c = Command.deserialize(body);
+						String message = new String(body, "UTF-8");
+				        System.out.println(" [x] Received '" + message + "'");
+				        Command c = (Command) SerializationUtils.deserialize(body);
+						//Command c = Command.deserialize(body);
 						
 						servant.processCommand(c);
-					} catch (ClassNotFoundException e) {
-						System.err.println("Error when processing your command.");
+					} catch (Exception e) {
+						System.err.println("Error when processing your command. " + e);
 					}finally{
+						System.out.println("finally");
 						servant.finishSession();
 						System.exit(0);
 					}
@@ -77,13 +84,14 @@ public class OrderBookServer {
 
 			if(endDate != null){
 				sleepUntil(end);
+				System.out.println("endate");
 				servant.finishSession();
 				System.exit(0);
 			}
 			System.out.println("Running forever");
 
-		}catch(ConnectException e){
-			System.err.println("Couldn't find RMIRegistry. Make sure it's up and running.");
+		}catch(IOException e){
+			System.err.println("Couldn't find RabbitMQ. Make sure it's up and running.");
 			System.exit(-1);
 		}
 	}
