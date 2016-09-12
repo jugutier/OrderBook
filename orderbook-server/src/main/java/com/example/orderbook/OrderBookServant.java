@@ -74,6 +74,26 @@ public class OrderBookServant implements OrderBookService{
 		orders.clear();		
 	}
 
+	public void processCommand(Command c) {
+		String commandType = c.getType();
+		if(commandType.equals(Command.LIST)){
+			List<Order> l = listOrders();
+			System.out.println("orders" + l);
+		}else if(commandType.equals(Command.TRADE)){
+			Order o = (Order) c.getPayload();
+			if(o.getOrderId() != null){
+				orders.update(o);
+			}
+			else if(o.isBuying()){
+				orders.buy(o);
+			}
+			else{
+				orders.sell(o);
+			}
+		}
+		
+	}
+
 
 
 }

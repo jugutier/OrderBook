@@ -1,27 +1,63 @@
 package com.example.orderbook.server;
 
+import java.io.IOException;
 import java.rmi.ConnectException;
-import java.rmi.RemoteException;
 import java.util.Date;
 
+import com.example.orderbook.Command;
 import com.example.orderbook.OrderBookServant;
 import com.example.orderbook.util.Analyzer;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 
 public class OrderBookServer {
+	private static final String QUEUE_NAME = "com.example.orderbook";
+	
+	private static Connection connection;
+	private static Channel channel;
 
-	public static void main(final String[] args) throws RemoteException {
+	public static void main(final String[] args) throws IOException {
 		try{
 			final Analyzer auxi = new Analyzer(args);
 			final int port = Integer.valueOf(auxi.get("PORT").toString());
 			final String hostname = auxi.get("HOSTNAME").toString();
-			final String service = auxi.get("SERVICE").toString();
 			auxi.dump();
 
 			final String start = auxi.get("START").toString();
 			sleepUntil(start);
+			
+			ConnectionFactory factory = new ConnectionFactory();
+			factory.setHost(hostname);
+		    factory.setPort(port);
+			connection = factory.newConnection();
+			channel = connection.createChannel();
 
-
+			channel.queueDeclare(QUEUE_NAME, false, false, false, null);
 			final OrderBookServant servant = new OrderBookServant();
+			
+			Consumer consumer = new DefaultConsumer(channel) {
+				@Override
+				public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
+						throws IOException {
+					try {
+						Command c = Command.deserialize(body);
+						
+						servant.processCommand(c);
+					} catch (ClassNotFoundException e) {
+						System.err.println("Error when processing your command.");
+					}finally{
+						servant.finishSession();
+						System.exit(0);
+					}
+					channel.basicAck(envelope.getDeliveryTag(), false);
+				}
+			};
+			channel.basicConsume(QUEUE_NAME, true, consumer);			
 
 			System.out.println("Service bound");
 

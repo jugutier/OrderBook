@@ -25,8 +25,7 @@ public class Analyzer {
     public Analyzer(String[] args) {
         // default
         p.put("HOSTNAME", "localhost");
-        p.put("PORT", 1099);
-        p.put("SERVICE", "OrderBookService");
+        p.put("PORT", 5672);
         p.put("START",new SimpleDateFormat(dateFormat).format(new Date()));
         p.put("END", "never");
         
