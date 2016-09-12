@@ -26,8 +26,6 @@ public interface OrderBookService {
 	/**
 	 * Books an order into the value-time priority queue.
 	 * 
-	 * We require many parameters instead of the Order object because marshalling
-	 *  becomes more efficient through the net in this way.
 	 *
 	 * @param clientId
 	 *            the client's unique identifier

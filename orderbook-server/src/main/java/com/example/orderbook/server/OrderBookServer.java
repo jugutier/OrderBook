@@ -5,7 +5,6 @@ import java.util.Date;
 
 import org.apache.commons.lang.SerializationUtils;
 
-import com.example.orderbook.Command;
 import com.example.orderbook.OrderBookServant;
 import com.example.orderbook.util.Analyzer;
 import com.rabbitmq.client.AMQP;
@@ -48,12 +47,9 @@ public class OrderBookServer {
 				public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
 						throws IOException {
 					try {
-						String message = new String(body, "UTF-8");
-				        System.out.println(" [x] Received '" + message + "'");
-				        Command c = (Command) SerializationUtils.deserialize(body);
-						//Command c = Command.deserialize(body);
+				        Request r = (Request) SerializationUtils.deserialize(body);
 						
-						servant.processCommand(c);
+						servant.process(r);
 					} catch (Exception e) {
 						System.err.println("Error when processing your command. " + e);
 					}finally{

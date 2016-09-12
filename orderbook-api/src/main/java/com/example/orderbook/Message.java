@@ -1,21 +1,16 @@
 package com.example.orderbook;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public class Command implements Serializable{
+public class Message implements Serializable{
 	private static final long serialVersionUID = -1196396812023678389L;
-	public static final String LIST = "list";
-	public static final String TRADE = "trade";
+	
+	private static final String delimiter = ";";
 	
 	private String type;
-	private Order payload;
+	private Object payload;
 	
-	public Command(final String type, final Order payload){
+	public Message(final String type, final Object payload){
 		this.type = type;
 		this.payload = payload;
 	}
@@ -24,9 +19,26 @@ public class Command implements Serializable{
 		return type;
 	}
 
-	public Order getPayload() {
+	public Object getPayload() {
 		return payload;
-	}	
+	}
+	
+	public void setPayload(Object payload) {
+		this.payload = payload;
+	}
+	
+	public void pack(String ... args){
+		StringBuffer sb = new StringBuffer(args.length);
+		for (String arg : args) {
+			sb.append(arg)
+			.append(delimiter);
+		}
+		setPayload(sb.toString());
+	}
+	
+	public String[] unpack(){
+		return ((String)payload).split(delimiter);
+	}
 //	//http://stackoverflow.com/questions/3736058/java-object-to-byte-and-byte-to-object-converter-for-tokyo-cabinet
 //	public byte[] serialize() throws IOException {
 //	    ByteArrayOutputStream out = new ByteArrayOutputStream();

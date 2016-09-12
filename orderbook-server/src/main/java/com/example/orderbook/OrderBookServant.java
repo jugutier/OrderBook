@@ -4,7 +4,9 @@ import java.rmi.RemoteException;
 import java.util.List;
 
 import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.client.Response;
 import com.example.orderbook.server.OrderBookService;
+import com.example.orderbook.server.Request;
 
 public class OrderBookServant implements OrderBookService{
 	private final PriorityOrderBook orders;
@@ -74,17 +76,13 @@ public class OrderBookServant implements OrderBookService{
 		orders.clear();		
 	}
 
-	public void processCommand(Command c) {
+	public Response process(Request c) {
 		String commandType = c.getType();
-		if(commandType.equals(Command.LIST)){
+		if(commandType.equals(Request.LIST)){
 			List<Order> l = listOrders();
 			System.out.println("orders" + l);
-		}else if(commandType.equals(Command.TRADE)){
+		}else if(commandType.equals(Request.BOOK)){
 			Order o = (Order) c.getPayload();
-//			if(o.getOrderId() != null){
-//				orders.update(o);
-//			}
-//			else 
 			if(o.isBuying()){
 				orders.buy(o);
 			}
@@ -92,6 +90,7 @@ public class OrderBookServant implements OrderBookService{
 				orders.sell(o);
 			}
 		}
+		return null;
 		
 	}
 

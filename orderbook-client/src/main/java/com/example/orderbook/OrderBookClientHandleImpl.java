@@ -1,10 +1,11 @@
-package com.example.orderbook.client;
+package com.example.orderbook;
 
-import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
+import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.client.Response;
 import com.example.orderbook.util.Analyzer;
 
 /**
@@ -18,8 +19,7 @@ import com.example.orderbook.util.Analyzer;
  * This is to showcase how further extensions could store matched 
  * transactions in a database or do any other actions with it.
  */
-public class OrderBookClientHandleImpl implements OrderBookClientHandle, Serializable{
-	private static final long serialVersionUID = 6505362435620566841L;
+public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 	private final String clientId;
 	private List<String> transactions;
 	
@@ -82,6 +82,18 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle, Seriali
 		transactions.add(logTransaction);
 		System.out.println(logTransaction);	
 		
+	}
+	
+	public void process(Response r) {
+		String commandType = r.getType();
+		String[] arguments = r.unpack();
+		if(commandType.equals(Response.CANCELLED)){
+			notifyOrderCancelled(arguments[0]);
+		}else if (commandType.equals(Response.MATCHED)){
+			notifyOrderMatched(arguments[0], Integer.valueOf(arguments[1]), Double.valueOf(arguments[2]), Boolean.valueOf(arguments[3]));
+		}else if (commandType.equals(Response.UPDATED)){
+			notifyOrderUpdated(arguments[0], Boolean.valueOf(arguments[1]));
+		}		
 	}
 	
 }

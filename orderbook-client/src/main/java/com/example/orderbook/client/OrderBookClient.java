@@ -11,16 +11,20 @@ import java.util.Objects;
 
 import org.apache.commons.lang.SerializationUtils;
 
-import com.example.orderbook.Command;
 import com.example.orderbook.Order;
+import com.example.orderbook.OrderBookClientHandleImpl;
 import com.example.orderbook.server.OrderBookService;
+import com.example.orderbook.server.Request;
 import com.example.orderbook.util.Analyzer;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class OrderBookClient {
-	private static final String QUEUE_NAME = "com.example.orderbook";
+	private static final String REQUEST_QUEUE_NAME = "com.example.orderbook";
+	private static String REPLY_QUEUE_NAME;
 	/** The handler is how this instance of the client gets messages from the service. **/
 	private static OrderBookClientHandleImpl clientHandler;
 	/** The unique identifier for this client. **/
@@ -30,6 +34,7 @@ public class OrderBookClient {
 	
 	private static Connection connection;
 	private static Channel channel;
+	private static QueueingConsumer consumer;
 
 	public static void main(String[] args) throws MalformedURLException, IOException, NotBoundException {
 		try{
@@ -50,8 +55,10 @@ public class OrderBookClient {
 		    factory.setPort(Integer.valueOf(port.toString()));
 		    connection = factory.newConnection();
 		    channel = connection.createChannel();
-		    channel.queueDeclare(QUEUE_NAME, false, false, false, null);
-
+		    REPLY_QUEUE_NAME = channel.queueDeclare().getQueue();
+		    consumer = new QueueingConsumer(channel);
+		    channel.basicConsume(REPLY_QUEUE_NAME, true, consumer);
+		    
 			clientHandler = new OrderBookClientHandleImpl(clientId);
 
 			Runtime.getRuntime().addShutdownHook(new Thread()
@@ -64,8 +71,8 @@ public class OrderBookClient {
 				    try {
 				    	finishSession();
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						System.err.println("RabbitMQ is unavailable. "
+								+ "The server couldn't be notified about our abnormal exit");
 					}
 				}
 			});
@@ -76,14 +83,15 @@ public class OrderBookClient {
 				String line;
 				while( !(line = br.readLine()).equals("") ){
 					String[] input = line.split(" ");
-					Command c = null;
+					Request r = null;
 					if(input.length == 1 && input[0].equalsIgnoreCase("LIST")){
 						//listAllOrders(serverHandle, clientHandler);
-						c = new Command(Command.LIST, null);
+						r = new Request(Request.LIST, null);
 					}else{
 						try{
 							Order o = parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
-							c = new Command(Command.TRADE, o);
+							//TODO: distinguish book from update.
+							r = new Request(Request.BOOK, o);
 							
 						}catch(NullPointerException e){
 							System.err.println("Error: " + e.getMessage());
@@ -93,7 +101,22 @@ public class OrderBookClient {
 					}
 					System.out.println("publish");
 					
-					channel.basicPublish("", QUEUE_NAME, null, SerializationUtils.serialize(c)/*c.serialize()*/);					
+					BasicProperties props = new BasicProperties
+                            .Builder()
+                            .correlationId(clientId)
+                            .replyTo(REPLY_QUEUE_NAME)
+                            .build();
+					
+					channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(r)/*c.serialize()*/);
+					//Wait for server's response.
+					while (true) {
+						QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+						if (delivery.getProperties().getCorrelationId().equals(clientId)){
+							Response response = (Response) SerializationUtils.deserialize(delivery.getBody());
+							clientHandler.process(response);
+							break;
+						}
+					}
 				}
 			}while(true);
 		} catch(Exception e){
