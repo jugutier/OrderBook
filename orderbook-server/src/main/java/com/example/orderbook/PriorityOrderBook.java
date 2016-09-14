@@ -207,7 +207,7 @@ public class PriorityOrderBook {
 					//If we still have units, attempt to match recursively
 					return transactionValue * placedUnits + match(pq,o);
 				}
-				return transactionValue;
+				return placedUnits > 0 ? transactionValue: 0.0;
 	}
 
 	public void clear() {

@@ -153,17 +153,7 @@ public class OrderBookClient {
 			}catch(IllegalArgumentException e){
 				System.err.println(e.getMessage());
 			}
-		}
-//		Request r;
-//		if(orderId != null){
-//			Long orderIdValue = Long.valueOf(orderId.toString());
-//			o = new Order(orderIdValue, clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
-//			r = new Request(Request.UPDATE, o);
-//		}else{
-//			o = new Order( clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
-//			r = new Request(Request.BOOK, o);
-//		}
-		
+		}		
 		return (Request)serverHandle;
 
 	}
