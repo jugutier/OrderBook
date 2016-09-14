@@ -123,8 +123,6 @@ public class OrderBookClient {
 		}finally {
 			finishSession();
 		}
-
-
 	}
 
 

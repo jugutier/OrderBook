@@ -31,10 +31,12 @@ Define the env variable ROOT (for every console window), pointing to where you c
 `$> export ROOT="<path_to_repo_clone>"`
 
 Once in "$ROOT" , and stepped into this repository's extract location run:
+
 `$> mvn clean install`
 
 ###Setting it up to browse with eclipse (optional)
 While in the "$ROOT" folder run:
+
 `$> mvn eclipse:eclipse -DdownloadSources=true`
 
 or simply import as a maven project through the eclipse-maven's plugin wizard.
@@ -42,21 +44,17 @@ or simply import as a maven project through the eclipse-maven's plugin wizard.
 ===
 
 ## Showtime
-We will need at least 3 console windows open for this when running local server & clients. For conviniency use the scripts `rmi.sh` `server.sh` `client-joe.sh` `client-pete.sh` all in different console windows will provide a server and 2 valid clients for live testing.
+We will need at least 3 console windows open for this when running local server & clients. For conviniency use the scripts `rabbitmq.sh` `server.sh` `client-joe.sh` `client-pete.sh` all in different console windows will provide a server and 2 valid clients for live testing.
 
 **Steps 1-2-3 can be ignored if you decide to use the scripts.**
 
-### 1 - Rmi registry
+### 1 - RabbitMQ
 
-`$> export CLASSPATH="$ROOT/orderbook-server/target/classes:$ROOT/orderbook-api/target/classes"`
-
-`$> rmiregistry`
+`$> rabbitmq-server`
 
 ### 2 - Server
 
-`$> export CLASSPATH="$ROOT/orderbook-server/target/classes:$ROOT/ordebook-api/target/classes"`
-
-`$> java com.example.rmi.orderbook.server.OrderBookServer`
+`$> java -jar orderbook-server/target/orderbook-server-1.0-SNAPSHOT.jar`
 
 ####Aditional parameters (Server)
 
@@ -84,10 +82,7 @@ for example:
 
 We support many clients running concurrently over the net. If your server is running on a different computer make sure you're passing the optional paramters:
 
-
-`$> export CLASSPATH="$ROOT/orderbook-client/target/classes:$ROOT/orderbook-api/target/classes"`
-
-`$> java com.example.rmi.orderbook.OrderBookClient CLIENT=myClientId`
+`$> java -jar orderbook-client/target/orderbook-client-1.0-SNAPSHOT.jar CLIENT=myClientId`
 
 Passing the clientId over CLI simulates the authentication of a user. That would be the place where the server could prompt for a password and authenticate against a secure database.
 
@@ -118,7 +113,7 @@ Client's transaction log can be accessed through.
 `LIST`
 
 		It shows a Transaction log for that client, meaning all matches (buy & sell) that happened over the session for that current client. This would be something the client can have access to, since it's their own transactions and can't affect the market in any way.
-		Aditionally ,It dumps the server's book to inspect it's internal state. This is for debugging purposes and would never be something the client can see.
+		Aditionally ,It trirggers a dump of the server's (on it's console) book to inspect it's internal state. This is for debugging purposes and would never be something the client can see.
 
 ###Updating orders
 
@@ -138,14 +133,12 @@ When doing so the following considerations take place:
 
 ## Tests
 
-An OrderBook has several rules that it needs to apply, for that reason there are [Unit Tests](orderbook-server/src/test/java/com/example/rmi/orderbook/OrderBookServiceTest.java) the comments should aid to understand the behavior expected for this service.
+An OrderBook has several rules that it needs to apply, for that reason there are [Unit Tests](orderbook-server/src/test/java/com/example/orderbook/OrderBookServiceTest.java) the comments should aid to understand the behavior expected for this service.
 
 Given that the project is client-server we only test our PriorityOrderBook where the logic rules are actually enforced. Any remote objects are mocked using the `Mockito` Java tool.
 
-###About RMIRegistry
+###About RabbitMQ
 
-When working with remote objects through the network client and server need to know about objects that are sitting in a computer in some other location. 
+[RabbitMQ](https://www.rabbitmq.com) is a message queue supported in many languages and backed by Pivotal. By using this technology we enable multiple clients to query a single server with the posibility of spinning multiple instances of the server on demand, if for example trade increased at a particular time of day. This would happen with very little code change and having each instance address a particular type of security.
 
-Here is where rmiregistry helps us, when publishing a service it provides a Mocked Skeleton of the shared objects, with the same methods and takes care of the network handling transparently to the user. Client-server are programmed like any regular Java project, with the exception that concurrency now needs to be considered in critical sections.
-
-To get that functionality we have to extend the `Remote` interface indicating that our Methods may through `RemoteException` if the connection drops. Also, all of our shared model objects need to implement `Serializable` to be able to be transported through the network.
+Nota that if deploying on a real-life envirorment the file-descriptor limit for RabbitMQ should be higher than the default OS' as per [this article](https://www.rabbitmq.com/install-debian.html)
