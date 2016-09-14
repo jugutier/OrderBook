@@ -1,19 +1,17 @@
 package com.example.orderbook.server;
 
-import java.io.IOException;
 import java.util.Date;
 
 import org.apache.commons.lang.SerializationUtils;
 
 import com.example.orderbook.OrderBookServant;
+import com.example.orderbook.client.Response;
 import com.example.orderbook.util.Analyzer;
-import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Consumer;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.QueueingConsumer;
 
 public class OrderBookServer {
 	private static final String QUEUE_NAME = "com.example.orderbook";
@@ -42,27 +40,8 @@ public class OrderBookServer {
 			channel.basicQos(1);
 			final OrderBookServant servant = new OrderBookServant();
 			
-			Consumer consumer = new DefaultConsumer(channel) {
-				@Override
-				public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
-						throws IOException {
-					try {
-				        Request r = (Request) SerializationUtils.deserialize(body);
-						
-						servant.process(r);
-					} catch (Exception e) {
-						System.err.println("Error when processing your command. " + e);
-					}finally{
-						System.out.println("finally");
-						servant.finishSession();
-						System.exit(0);
-					}
-					channel.basicAck(envelope.getDeliveryTag(), false);
-				}
-			};
-			channel.basicConsume(QUEUE_NAME, true, consumer);			
-
-			System.out.println("Service bound");
+			QueueingConsumer consumer = new QueueingConsumer(channel);
+			channel.basicConsume(QUEUE_NAME, false, consumer);
 
 			Runtime.getRuntime().addShutdownHook(new Thread()
 			{
@@ -85,10 +64,44 @@ public class OrderBookServer {
 				System.exit(0);
 			}
 			System.out.println("Running forever");
+			
+			System.out.println("Service bound");
 
-		}catch(IOException e){
+			while (true) {
+				Response response = null;
+
+				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+
+				BasicProperties props = delivery.getProperties();
+				BasicProperties replyProps = new BasicProperties
+						.Builder()
+				.correlationId(props.getCorrelationId())
+				.build();
+
+				try {
+					 Request request = (Request) SerializationUtils.deserialize(delivery.getBody());
+					 System.out.println("request: "+ request);
+					response = servant.process(request);
+				}
+				catch (Exception e){
+					System.err.println("Error when processing your request. " + e.toString());
+				}
+				finally {  
+					channel.basicPublish( "", props.getReplyTo(), replyProps, SerializationUtils.serialize(response));
+					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+				}
+			}
+
+		}catch(Exception e){
 			System.err.println("Couldn't find RabbitMQ. Make sure it's up and running.");
 			System.exit(-1);
+		}finally {
+			if (connection != null) {
+				try {
+					connection.close();
+				}
+				catch (Exception ignore) {}
+			}
 		}
 	}
 

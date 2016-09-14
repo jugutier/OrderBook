@@ -35,5 +35,7 @@ public interface OrderBookClientHandle{
 	 */
 	void notifyOrderUpdated(String orderId, boolean success);
 	
+	void notifyOrderQueued(String orderId);
+	
 	
 }

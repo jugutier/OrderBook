@@ -1,10 +1,7 @@
 package com.example.orderbook.server;
 
-import java.util.List;
-
 import com.example.orderbook.Message;
-import com.example.orderbook.Order;
-import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.client.Response;
 
 public class Request extends Message implements OrderBookService{
 
@@ -14,37 +11,35 @@ public class Request extends Message implements OrderBookService{
 	public static final String CLIENT_EXITS = "clientExits";
 	public static final String UPDATE = "updateOrder";
 	
-	public Request(String type, Object payload) {
-		super(type, payload);
+
+	@Override
+	public void listOrders() {
+		setType(LIST);
 	}
 
 	@Override
-	public List<Order> listOrders() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void bookOrder(String clientId, String securityId, Integer amount,
-			Double value, boolean isBuying, OrderBookClientHandle clientHandler) {
-		pack(clientId, securityId, amount.toString(), value.toString(), String.valueOf(isBuying) , clientHandler.toString());
-		
+	public Response bookOrder(String clientId, String securityId, Integer amount,
+			Double value, boolean isBuying) {
+		setType(BOOK);
+		pack(clientId, securityId, amount.toString(), value.toString(), String.valueOf(isBuying) );
+		return null;		
 	}
 
 	@Override
 	public void clientExits(String clientId) {
+		setType(CLIENT_EXITS);
 		pack(clientId);		
 	}
 
 	@Override
-	public void updateOrder(Long orderId, String clientId, String securityId,
-			Integer amount, Double value, boolean isBuying,
-			OrderBookClientHandle clientHandler) {
+	public Response updateOrder(Long orderId, String clientId, String securityId,
+			Integer amount, Double value, boolean isBuying) {
+		setType(UPDATE);
 		pack(orderId.toString(), clientId, securityId, 
-				amount.toString(), value.toString(), 
-				String.valueOf(isBuying) , clientHandler.toString());
+					amount.toString(), value.toString(), 
+					String.valueOf(isBuying) );
 		
-		
+		return null;
 	}
 
 }

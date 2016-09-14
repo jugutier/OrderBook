@@ -84,7 +84,25 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 		
 	}
 	
+	@Override
+	public void notifyOrderQueued(String orderId) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(clientId)
+		.append("-> Order queued ")
+		.append(orderId)
+		.append(" at ")
+		.append(Analyzer.milliSecondsToTimestamp(System.currentTimeMillis()));
+		
+		String logTransaction = sb.toString();
+		transactions.add(logTransaction);
+		System.out.println(logTransaction);	
+		
+	}
+	
 	public void process(Response r) {
+		if(r == null){
+			return;
+		}
 		String commandType = r.getType();
 		String[] arguments = r.unpack();
 		if(commandType.equals(Response.CANCELLED)){
@@ -93,7 +111,9 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 			notifyOrderMatched(arguments[0], Integer.valueOf(arguments[1]), Double.valueOf(arguments[2]), Boolean.valueOf(arguments[3]));
 		}else if (commandType.equals(Response.UPDATED)){
 			notifyOrderUpdated(arguments[0], Boolean.valueOf(arguments[1]));
-		}		
-	}
+		}else if (commandType.equals(Response.QUEUED)){
+			notifyOrderQueued(arguments[0]);
+		}
+	}	
 	
 }

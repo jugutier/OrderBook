@@ -3,7 +3,6 @@ package com.example.orderbook;
 import java.rmi.RemoteException;
 import java.util.List;
 
-import com.example.orderbook.client.OrderBookClientHandle;
 import com.example.orderbook.client.Response;
 import com.example.orderbook.server.OrderBookService;
 import com.example.orderbook.server.Request;
@@ -17,38 +16,48 @@ public class OrderBookServant implements OrderBookService{
 	}
 
 	@Override
-	public List<Order> listOrders(){
-		return orders.getAllOrders();
+	public void listOrders(){
+		System.out.println("=== Debug: Server state - All current orders ===");
+		final List<Order> orders =  this.orders.getAllOrders();
+		for (Order order : orders) {
+			System.out.println(order);
+		}		
 	}
 
 	@Override
-	public void bookOrder(String clientId, String securityId, Integer amount,
-			Double value, boolean isBuying,	OrderBookClientHandle clientHandler) 
+	public Response bookOrder(String clientId, String securityId, Integer amount,
+			Double value, boolean isBuying) 
 					{
+		Response response = new Response();
 		Order bookedOrder = new Order(clientId, securityId, amount, value,
-				isBuying, System.currentTimeMillis(), clientHandler);
+				isBuying, System.currentTimeMillis(), response);
 		System.out.println("Booking...");
+		Double retVal;
 		if(isBuying){
-			orders.buy(bookedOrder);
+			retVal = orders.buy(bookedOrder);
 		}else{
-			orders.sell(bookedOrder);
+			retVal = orders.sell(bookedOrder);
 		}
+		response.setValue(retVal);
 		System.out.println(bookedOrder);
+		return response;
 
 
 	}
 
 	@Override
-	public void updateOrder(Long orderId, String clientId, String securityId,
-			Integer amount, Double value, boolean isBuying,
-			OrderBookClientHandle clientHandler)  {
+	public Response updateOrder(Long orderId, String clientId, String securityId,
+			Integer amount, Double value, boolean isBuying)  {
 		
 		System.out.println("Updating...");
+		Response response = new Response();
 		Order orderToUpdate = new Order(orderId, clientId, securityId, amount, value,
-				isBuying ,  System.currentTimeMillis(),  clientHandler);
+				isBuying ,  System.currentTimeMillis(),  new Response());
 		
-		orders.update(orderToUpdate);
+		Double retVal = orders.update(orderToUpdate);
+		response.setValue(retVal);
 		System.out.println(orderToUpdate);
+		return response;
 
 	}
 
@@ -75,25 +84,25 @@ public class OrderBookServant implements OrderBookService{
 		}		
 		orders.clear();		
 	}
-
+	
 	public Response process(Request c) {
-		String commandType = c.getType();
-		if(commandType.equals(Request.LIST)){
-			List<Order> l = listOrders();
-			System.out.println("orders" + l);
-		}else if(commandType.equals(Request.BOOK)){
-			Order o = (Order) c.getPayload();
-			if(o.isBuying()){
-				orders.buy(o);
-			}
-			else{
-				orders.sell(o);
-			}
+		if( c == null){
+			return null;
 		}
-		return null;
+		String commandType = c.getType();
+		String[] arguments = c.unpack();
+		Response response = null;
+		if(commandType.equals(Request.LIST)){
+			listOrders();
+		}else if(commandType.equals(Request.BOOK)){
+			response = bookOrder(arguments[0], arguments[1], Integer.valueOf(arguments[2]), Double.valueOf(arguments[3]), Boolean.valueOf(arguments[4]));
+		}else if(commandType.equals(Request.UPDATE)){
+			response = updateOrder(Long.valueOf(arguments[0]), arguments[1], arguments[2], Integer.valueOf(arguments[3]), Double.valueOf(arguments[4]), Boolean.valueOf(arguments[5]));
+		}else if(commandType.equals(Request.CLIENT_EXITS)){
+			clientExits(arguments[0]);
+		}
+		return response;
 		
 	}
-
-
 
 }

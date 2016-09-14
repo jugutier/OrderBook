@@ -11,16 +11,15 @@ import java.util.Objects;
 
 import org.apache.commons.lang.SerializationUtils;
 
-import com.example.orderbook.Order;
 import com.example.orderbook.OrderBookClientHandleImpl;
 import com.example.orderbook.server.OrderBookService;
 import com.example.orderbook.server.Request;
 import com.example.orderbook.util.Analyzer;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.AMQP.BasicProperties;
 
 public class OrderBookClient {
 	private static final String REQUEST_QUEUE_NAME = "com.example.orderbook";
@@ -42,7 +41,7 @@ public class OrderBookClient {
 			Object port = auxi.get("PORT");
 			Object hostname = auxi.get("HOSTNAME");
 			clientId = (String) auxi.get("CLIENT");
-			if(clientId == null){
+			if(clientId == null ){
 				System.err.println("Please authenticate by passing your clientId through cli arguments: CLIENT=myId");
 				System.exit(-1);
 			}
@@ -60,6 +59,7 @@ public class OrderBookClient {
 		    channel.basicConsume(REPLY_QUEUE_NAME, true, consumer);
 		    
 			clientHandler = new OrderBookClientHandleImpl(clientId);
+			serverHandle = new Request();
 
 			Runtime.getRuntime().addShutdownHook(new Thread()
 			{
@@ -83,15 +83,12 @@ public class OrderBookClient {
 				String line;
 				while( !(line = br.readLine()).equals("") ){
 					String[] input = line.split(" ");
-					Request r = null;
+					Request request = null;
 					if(input.length == 1 && input[0].equalsIgnoreCase("LIST")){
-						//listAllOrders(serverHandle, clientHandler);
-						r = new Request(Request.LIST, null);
+						request = listAllOrders(clientHandler);
 					}else{
 						try{
-							Order o = parseTransaction(clientId, serverHandle, clientHandler, new Analyzer(input));
-							//TODO: distinguish book from update.
-							r = new Request(Request.BOOK, o);
+							request = parseTransaction(clientId,serverHandle, new Analyzer(input));
 							
 						}catch(NullPointerException e){
 							System.err.println("Error: " + e.getMessage());
@@ -107,12 +104,13 @@ public class OrderBookClient {
                             .replyTo(REPLY_QUEUE_NAME)
                             .build();
 					
-					channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(r)/*c.serialize()*/);
+					channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(request)/*c.serialize()*/);
 					//Wait for server's response.
 					while (true) {
 						QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 						if (delivery.getProperties().getCorrelationId().equals(clientId)){
 							Response response = (Response) SerializationUtils.deserialize(delivery.getBody());
+							System.out.println("response: " + response);
 							clientHandler.process(response);
 							break;
 						}
@@ -132,46 +130,56 @@ public class OrderBookClient {
 
 	private static void finishSession() throws IOException{
 		// Unexport any remaining client the callback manager if the server dies.
-			serverHandle.clientExits(clientId);
+			//serverHandle.clientExits(clientId);
 			//TODO: notify client/server
 			//clientHandler.unexport();
 			channel.close();
 		    connection.close();
 	}
 
-	private static Order parseTransaction(String clientId, OrderBookService serverHandle, OrderBookClientHandle clientHandler, Analyzer command) throws RemoteException{
+	private static Request parseTransaction(String clientId, OrderBookService serverHandle, Analyzer command) throws RemoteException{
 		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
 		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
 		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
 		boolean isBuying = Objects.requireNonNull(command.get("ISBUYING"), "Must indicate a ISBUYING (yes/no)").toString().equalsIgnoreCase("yes");
 		
 		Object orderId = command.get("ORDERID");
-		Order ret;
 		if(orderId != null){
 			Long orderIdValue = Long.valueOf(orderId.toString());
-			ret = new Order(orderIdValue, clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
+			serverHandle.updateOrder(orderIdValue, clientId, securityId, amount, value, isBuying);
 		}else{
-			ret = new Order( clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
+			try{
+				serverHandle.bookOrder(clientId, securityId, amount, value, isBuying);
+			}catch(IllegalArgumentException e){
+				System.err.println(e.getMessage());
+			}
 		}
+//		Request r;
+//		if(orderId != null){
+//			Long orderIdValue = Long.valueOf(orderId.toString());
+//			o = new Order(orderIdValue, clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
+//			r = new Request(Request.UPDATE, o);
+//		}else{
+//			o = new Order( clientId, securityId, amount, value, isBuying, System.currentTimeMillis(), clientHandler);
+//			r = new Request(Request.BOOK, o);
+//		}
 		
-		return ret;
+		return (Request)serverHandle;
 
 	}
 		
 	/* For live testing only. */
-	private static void listAllOrders(OrderBookService serverHandle, OrderBookClientHandleImpl clientHandle) throws RemoteException {
+	private static Request listAllOrders(OrderBookClientHandleImpl clientHandle) throws RemoteException {
 		System.out.println("=============BEGIN==============");
-		System.out.println("=== Debug: Server state - All current orders ===");
-		final List<Order> orders =  serverHandle.listOrders();
-		for (Order order : orders) {
-			System.out.println(order);
-		}
 		System.out.println("===  Client state - Transaction Log ===");
 		List<String> transactions = clientHandle.getTransactionsLog();
 		for (String transaction : transactions) {
 			System.out.println(transaction);
 		}
 		System.out.println("=============END==============");
+		Request ret = new Request();
+		ret.listOrders();
+		return ret;
 	}
 
 }

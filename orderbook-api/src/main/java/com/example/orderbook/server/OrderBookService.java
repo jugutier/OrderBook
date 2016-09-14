@@ -1,9 +1,6 @@
 package com.example.orderbook.server;
 
-import java.util.List;
-
-import com.example.orderbook.Order;
-import com.example.orderbook.client.OrderBookClientHandle;
+import com.example.orderbook.client.Response;
 
 /**
  * Service to operate in the Order Booking of securities.
@@ -21,7 +18,7 @@ public interface OrderBookService {
 	 * c) no access at all.
 	 * @return an priority - ordered list with current active orders
 	 */
-	List<Order> listOrders();
+	void listOrders();
 
 	/**
 	 * Books an order into the value-time priority queue.
@@ -40,7 +37,7 @@ public interface OrderBookService {
 	 * @param isBuying
 	 * 			boolean value to indicate if its a buying or selling order
 	 */
-	void bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler);
+	Response bookOrder(String clientId, String securityId, Integer amount, Double value, boolean isBuying);
 
 	/**
 	 * Sent by a client that wants to exit the session, thus canceling all his remaining orders placed.
@@ -71,5 +68,5 @@ public interface OrderBookService {
 	 * @param isBuying
 	 * 			boolean value to indicate if its a buying or selling order
 	 */
-	void updateOrder(Long orderId, String clientId, String securityId, Integer amount, Double value, boolean isBuying, OrderBookClientHandle clientHandler);
+	Response updateOrder(Long orderId, String clientId, String securityId, Integer amount, Double value, boolean isBuying);
 }

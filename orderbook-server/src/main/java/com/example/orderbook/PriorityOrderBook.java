@@ -78,6 +78,9 @@ public class PriorityOrderBook {
 				sellMap.put(desiredSecurity, pq);
 			}
 		}
+		if(transactionValue == 0.0){
+			sellOrder.getClientHandle().notifyOrderQueued(sellOrder.getOrderId().toString());
+		}
 		return transactionValue;
 	}
 
@@ -116,6 +119,9 @@ public class PriorityOrderBook {
 				pq.offer(buyOrder);
 				buyMap.put(desiredSecurity, pq);
 			}
+		}
+		if(transactionValue == 0.0){
+			buyOrder.getClientHandle().notifyOrderQueued(buyOrder.getOrderId().toString());
 		}
 		return transactionValue;
 	}
@@ -242,8 +248,9 @@ public class PriorityOrderBook {
 	 * 2.	price changes, remove add
      * 3.	quantity increases, price equals, remove add. (lose priority)
 	 * @param orderToUpdate
+	 * @return 
 	 */
-	public void update(Order orderToUpdate){
+	public Double update(Order orderToUpdate){
 		Map<String,PriorityBlockingQueue<Order>> sideToUpdateMap;
 		if(orderToUpdate.isBuying()){
 			sideToUpdateMap = buyMap;
@@ -253,6 +260,7 @@ public class PriorityOrderBook {
 		PriorityBlockingQueue<Order> securitiesForKey = sideToUpdateMap.get(orderToUpdate
 				.getSecurityId());
 		Order removeAddOrder = null;
+		Double retVal = 0.0;
 		boolean success = false;
 		for (Order order : securitiesForKey) {
 			if(order.getOrderId().equals(orderToUpdate.getOrderId())){
@@ -273,10 +281,17 @@ public class PriorityOrderBook {
 		}
 		if(removeAddOrder != null){
 			securitiesForKey.remove(removeAddOrder);
+			if(orderToUpdate.isBuying()){
+				retVal = buy(orderToUpdate);
+			}else{
+				retVal = sell(orderToUpdate);
+			}
+			//TODO: this could trigger a match, should go through buy/sell?!
 			securitiesForKey.offer(orderToUpdate);
 			success = true;
 		}
 		orderToUpdate.getClientHandle().notifyOrderUpdated(orderToUpdate.getOrderId().toString(), success);
+		return retVal;
 	}
 
 	/**
