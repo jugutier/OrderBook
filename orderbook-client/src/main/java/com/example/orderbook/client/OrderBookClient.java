@@ -34,6 +34,7 @@ public class OrderBookClient {
 	private static Connection connection;
 	private static Channel channel;
 	private static QueueingConsumer consumer;
+	private static BasicProperties props;
 
 	public static void main(String[] args) throws MalformedURLException, IOException, NotBoundException {
 		try{
@@ -60,6 +61,11 @@ public class OrderBookClient {
 		    
 			clientHandler = new OrderBookClientHandleImpl(clientId);
 			serverHandle = new Request();
+			props = new BasicProperties
+                    .Builder()
+                    .correlationId(clientId)
+                    .replyTo(REPLY_QUEUE_NAME)
+                    .build();
 
 			Runtime.getRuntime().addShutdownHook(new Thread()
 			{
@@ -95,22 +101,14 @@ public class OrderBookClient {
 							System.err.println("A transaction should look like this: "
 									+ "SECURITY=AAPL AMOUNT=20 VALUE=20.19 ISBUYING=YES");
 						}
-					}
-					System.out.println("publish");
-					
-					BasicProperties props = new BasicProperties
-                            .Builder()
-                            .correlationId(clientId)
-                            .replyTo(REPLY_QUEUE_NAME)
-                            .build();
-					
-					channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(request)/*c.serialize()*/);
+					}				
+					channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(request));
 					//Wait for server's response.
 					while (true) {
 						QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 						if (delivery.getProperties().getCorrelationId().equals(clientId)){
 							Response response = (Response) SerializationUtils.deserialize(delivery.getBody());
-							System.out.println("response: " + response);
+							//System.out.println("response: " + response);
 							clientHandler.process(response);
 							break;
 						}
@@ -127,15 +125,14 @@ public class OrderBookClient {
 
 
 	private static void finishSession() throws IOException{
-		// Unexport any remaining client the callback manager if the server dies.
-			//serverHandle.clientExits(clientId);
-			//TODO: notify client/server
-			//clientHandler.unexport();
-			channel.close();
-		    connection.close();
+		Request r = new Request();
+		r.clientExits(clientId);		
+		channel.basicPublish("", REQUEST_QUEUE_NAME, props, SerializationUtils.serialize(r));		
+		channel.close();
+	    connection.close();
 	}
 
-	private static Request parseTransaction(String clientId, OrderBookService serverHandle, Analyzer command) throws RemoteException{
+	private static Request parseTransaction(String clientId, OrderBookService serverHandle, Analyzer command){
 		String securityId = Objects.requireNonNull(command.get("SECURITY"), "Must enter a SECURITY").toString();
 		Integer amount = Integer.valueOf(Objects.requireNonNull(command.get("AMOUNT"), "Must enter an AMOUNT").toString());
 		Double value = Double.valueOf(Objects.requireNonNull(command.get("VALUE"), "Must enter a VALUE").toString());
@@ -155,8 +152,7 @@ public class OrderBookClient {
 		return (Request)serverHandle;
 
 	}
-		
-	/* For live testing only. */
+
 	private static Request listAllOrders(OrderBookClientHandleImpl clientHandle) throws RemoteException {
 		System.out.println("=============BEGIN==============");
 		System.out.println("===  Client state - Transaction Log ===");

@@ -88,7 +88,7 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 	public void notifyOrderQueued(String orderId) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(clientId)
-		.append("-> Order queued ")
+		.append("-> Order queued, id: ")
 		.append(orderId)
 		.append(" at ")
 		.append(Analyzer.milliSecondsToTimestamp(System.currentTimeMillis()));

@@ -1,8 +1,10 @@
 package com.example.orderbook;
 
 import java.io.Serializable;
-
-public class Message implements Serializable{
+/**
+ * Abstraction to represent a message between the client and server.
+ */
+public abstract class Message implements Serializable{
 	private static final long serialVersionUID = -1196396812023678389L;
 
 	private static final String delimiter = ";";

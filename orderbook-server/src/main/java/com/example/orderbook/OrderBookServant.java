@@ -21,7 +21,8 @@ public class OrderBookServant implements OrderBookService{
 		final List<Order> orders =  this.orders.getAllOrders();
 		for (Order order : orders) {
 			System.out.println(order);
-		}		
+		}
+		System.out.println("=== END === ");
 	}
 
 	@Override

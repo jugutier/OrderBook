@@ -35,6 +35,11 @@ public interface OrderBookClientHandle{
 	 */
 	void notifyOrderUpdated(String orderId, boolean success);
 	
+	/**
+	 * Notifies the client when an order gets successfully queued.
+	 * @param orderId
+	 * 			the unique orderId that was generated for the requested Order by the Server..
+	 */
 	void notifyOrderQueued(String orderId);
 	
 	
