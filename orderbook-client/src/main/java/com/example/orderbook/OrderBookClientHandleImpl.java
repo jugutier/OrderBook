@@ -104,15 +104,17 @@ public class OrderBookClientHandleImpl implements OrderBookClientHandle{
 			return;
 		}
 		String commandType = r.getType();
-		String[] arguments = r.unpack();
-		if(commandType.equals(Response.CANCELLED)){
-			notifyOrderCancelled(arguments[0]);
-		}else if (commandType.equals(Response.MATCHED)){
-			notifyOrderMatched(arguments[0], Integer.valueOf(arguments[1]), Double.valueOf(arguments[2]), Boolean.valueOf(arguments[3]));
-		}else if (commandType.equals(Response.UPDATED)){
-			notifyOrderUpdated(arguments[0], Boolean.valueOf(arguments[1]));
-		}else if (commandType.equals(Response.QUEUED)){
-			notifyOrderQueued(arguments[0]);
+		List<String[]> multiCalls = r.unpack();		
+		for (String[] arguments : multiCalls) {		
+			if(commandType.equals(Response.CANCELLED)){
+				notifyOrderCancelled(arguments[0]);
+			}else if (commandType.equals(Response.MATCHED)){
+				notifyOrderMatched(arguments[0], Integer.valueOf(arguments[1]), Double.valueOf(arguments[2]), Boolean.valueOf(arguments[3]));
+			}else if (commandType.equals(Response.UPDATED)){
+				notifyOrderUpdated(arguments[0], Boolean.valueOf(arguments[1]));
+			}else if (commandType.equals(Response.QUEUED)){
+				notifyOrderQueued(arguments[0]);
+			}
 		}
 	}	
 	

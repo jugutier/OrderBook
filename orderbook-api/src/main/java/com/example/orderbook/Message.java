@@ -1,6 +1,8 @@
 package com.example.orderbook;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 /**
  * Abstraction to represent a message between the client and server.
  */
@@ -8,6 +10,7 @@ public abstract class Message implements Serializable{
 	private static final long serialVersionUID = -1196396812023678389L;
 
 	private static final String delimiter = ";";
+	private static final String multiCallDelimiter = "]";
 
 	private String type;
 	private Object payload;
@@ -44,8 +47,12 @@ public abstract class Message implements Serializable{
 		return value;
 	}
 	
-	public void pack(String ... args){
+	public void pack(String ... args){		
 		StringBuffer sb = new StringBuffer(args.length);
+		if(this.payload != null){
+			sb.append((String)payload)
+			.append(multiCallDelimiter);
+		}
 		for (String arg : args) {
 			sb.append(arg)
 			.append(delimiter);
@@ -53,11 +60,17 @@ public abstract class Message implements Serializable{
 		setPayload(sb.toString());
 	}
 
-	public String[] unpack(){
+	public List<String[]> unpack(){
 		if(payload == null){
 			return null;
 		}
-		return ((String)payload).split(delimiter);
+		String[] multiCalls =  ((String)payload).split(multiCallDelimiter);
+		List<String[]> ret = new LinkedList<String[]>();
+		
+		for (String call : multiCalls) {
+			ret.add(call.split(delimiter));
+		}
+		return ret;
 	}
 
 	@Override

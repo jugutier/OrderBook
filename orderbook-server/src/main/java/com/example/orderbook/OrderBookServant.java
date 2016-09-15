@@ -91,16 +91,21 @@ public class OrderBookServant implements OrderBookService{
 			return null;
 		}
 		String commandType = c.getType();
-		String[] arguments = c.unpack();
-		Response response = null;
 		if(commandType.equals(Request.LIST)){
 			listOrders();
-		}else if(commandType.equals(Request.BOOK)){
-			response = bookOrder(arguments[0], arguments[1], Integer.valueOf(arguments[2]), Double.valueOf(arguments[3]), Boolean.valueOf(arguments[4]));
-		}else if(commandType.equals(Request.UPDATE)){
-			response = updateOrder(Long.valueOf(arguments[0]), arguments[1], arguments[2], Integer.valueOf(arguments[3]), Double.valueOf(arguments[4]), Boolean.valueOf(arguments[5]));
-		}else if(commandType.equals(Request.CLIENT_EXITS)){
-			clientExits(arguments[0]);
+		}
+		Response response = null;
+		List<String[]> multiCalls = c.unpack();
+		if(multiCalls != null){
+			for (String[] arguments : multiCalls) {			
+				if(commandType.equals(Request.BOOK)){
+					response = bookOrder(arguments[0], arguments[1], Integer.valueOf(arguments[2]), Double.valueOf(arguments[3]), Boolean.valueOf(arguments[4]));
+				}else if(commandType.equals(Request.UPDATE)){
+					response = updateOrder(Long.valueOf(arguments[0]), arguments[1], arguments[2], Integer.valueOf(arguments[3]), Double.valueOf(arguments[4]), Boolean.valueOf(arguments[5]));
+				}else if(commandType.equals(Request.CLIENT_EXITS)){
+					clientExits(arguments[0]);
+				}
+			}
 		}
 		return response;
 		

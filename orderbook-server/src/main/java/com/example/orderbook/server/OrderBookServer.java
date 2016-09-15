@@ -80,7 +80,6 @@ public class OrderBookServer {
 
 				try {
 					 Request request = (Request) SerializationUtils.deserialize(delivery.getBody());
-					 //System.out.println("request: "+ request);
 					response = servant.process(request);
 				}
 				catch (Exception e){

@@ -76,7 +76,7 @@ public class OrderBookClient {
 					
 				    try {
 				    	finishSession();
-					} catch (IOException e) {
+					} catch (Exception e) {
 						System.err.println("RabbitMQ is unavailable. "
 								+ "The server couldn't be notified about our abnormal exit");
 					}
