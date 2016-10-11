@@ -1,4 +1,2 @@
 #!/bin/bash
-export ROOT="." #Expected to be run at the git clone's location,otherwise adjust.
-export CLASSPATH="$ROOT/orderbook-server/target/classes:$ROOT/orderbook-api/target/classes"
-java com.example.rmi.orderbook.server.OrderBookServer 
+java -jar orderbook-server/target/orderbook-server-1.0-SNAPSHOT.jar
