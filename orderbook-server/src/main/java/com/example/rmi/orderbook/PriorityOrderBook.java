@@ -243,9 +243,10 @@ public class PriorityOrderBook {
 	 * 2.	price changes, remove add
      * 3.	quantity increases, price equals, remove add. (lose priority)
 	 * @param orderToUpdate
+	 * @return the value of the transaction if any matches occur by result of the update, null otherwise.
 	 * @throws RemoteException 
 	 */
-	public void update(Order orderToUpdate) throws RemoteException {
+	public Double update(Order orderToUpdate) throws RemoteException {
 		Map<String,PriorityBlockingQueue<Order>> sideToUpdateMap;
 		if(orderToUpdate.isBuying()){
 			sideToUpdateMap = buyMap;
@@ -273,12 +274,18 @@ public class PriorityOrderBook {
 				break;					
 			}
 		}
+		Double retVal = null;
 		if(removeAddOrder != null){
 			securitiesForKey.remove(removeAddOrder);
-			securitiesForKey.offer(orderToUpdate);
+			if(orderToUpdate.isBuying()){
+				retVal = buy(orderToUpdate);
+			}else{
+				retVal = sell(orderToUpdate);
+			}
 			success = true;
 		}
 		orderToUpdate.getClientHandle().notifyOrderUpdated(orderToUpdate.getOrderId().toString(), success);
+		return retVal;
 	}
 
 	/**
